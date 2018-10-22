@@ -37,6 +37,7 @@ type PaymentAddress struct {
 	Address         []byte // 33 bytes, use to receive coin
 	TransmissionKey []byte // 33 bytes, use to encrypt data
 }
+
 type PaymentInfo struct {
 	PaymentAddress PaymentAddress
 	Amount         uint64
