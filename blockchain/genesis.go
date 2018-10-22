@@ -10,6 +10,7 @@ import (
 	"github.com/ninjadotorg/cash/privacy/proto/zksnark"
 	"github.com/ninjadotorg/cash/transaction"
 	"github.com/ninjadotorg/cash/wallet"
+	"github.com/ninjadotorg/cash/privacy"
 )
 
 type GenesisBlockGenerator struct {
@@ -28,8 +29,8 @@ func (self GenesisBlockGenerator) CalcMerkleRoot(txns []transaction.Transaction)
 	return *merkles[len(merkles)-1]
 }
 
-func createGenesisInputNote(spendingKey *client.SpendingKey, idx uint) *client.Note {
-	addr := client.GenSpendingAddress(*spendingKey)
+func createGenesisInputNote(spendingKey *privacy.SpendingKey, idx uint) *client.Note {
+	addr := privacy.GenAddress(*spendingKey)
 	rho := [32]byte{byte(idx)}
 	r := [32]byte{byte(idx)}
 	note := &client.Note{
@@ -42,10 +43,12 @@ func createGenesisInputNote(spendingKey *client.SpendingKey, idx uint) *client.N
 }
 
 func createGenesisJSInput(idx uint) *client.JSInput {
-	spendingKey := &client.SpendingKey{} // SpendingKey for input of genesis transaction is 0x0
+	spendingKey := &privacy.SpendingKey{} // SpendingKey for input of genesis transaction is 0x0
 	input := new(client.JSInput)
 	input.InputNote = createGenesisInputNote(spendingKey, idx)
-	input.Key = spendingKey
+	var temp client.SpendingKey
+	copy(temp[:], (*spendingKey)[:])
+	input.Key = &temp
 	input.WitnessPath = (&client.MerklePath{}).CreateDummyPath()
 	return input
 }
@@ -64,15 +67,17 @@ func (self GenesisBlockGenerator) createGenesisTx(initialCoin uint64, initialAdd
 	if err != nil {
 		return nil, err
 	}
-	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PublicKey.Apk}
-	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PublicKey.Apk}
+	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PublicKey.Address}
+	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PublicKey.Address}
 
-	fmt.Printf("EncKey: %x\n", key.KeySet.PublicKey.Pkenc)
+	fmt.Printf("EncKey: %x\n", key.KeySet.PublicKey.TransmissionKey)
 
 	// Create deterministic outputs
+	var temp client.TransmissionKey
+	copy(temp[:], key.KeySet.PublicKey.TransmissionKey[:])
 	outputs := []*client.JSOutput{
-		&client.JSOutput{EncKey: key.KeySet.PublicKey.Pkenc, OutputNote: outNote},
-		&client.JSOutput{EncKey: key.KeySet.PublicKey.Pkenc, OutputNote: placeHolderOutputNote},
+		&client.JSOutput{EncKey: temp, OutputNote: outNote},
+		&client.JSOutput{EncKey: temp, OutputNote: placeHolderOutputNote},
 	}
 
 	// Wrap ephemeral private key

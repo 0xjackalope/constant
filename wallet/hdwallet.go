@@ -110,19 +110,19 @@ func (key *Key) Serialize(keyType byte) ([]byte, error) {
 		buffer.Write(keyBytes)
 	} else if keyType == PubKeyType {
 		keyBytes := make([]byte, 0)
-		keyBytes = append(keyBytes, byte(len(key.KeySet.PublicKey.Apk))) // set length Apk
-		keyBytes = append(keyBytes, key.KeySet.PublicKey.Apk[:]...)      // set Apk
+		keyBytes = append(keyBytes, byte(len(key.KeySet.PublicKey.Address))) // set length Apk
+		keyBytes = append(keyBytes, key.KeySet.PublicKey.Address[:]...)      // set Apk
 
-		keyBytes = append(keyBytes, byte(len(key.KeySet.PublicKey.Pkenc))) // set length Pkenc
-		keyBytes = append(keyBytes, key.KeySet.PublicKey.Pkenc[:]...)      // set Pkenc
+		keyBytes = append(keyBytes, byte(len(key.KeySet.PublicKey.TransmissionKey))) // set length Pkenc
+		keyBytes = append(keyBytes, key.KeySet.PublicKey.TransmissionKey[:]...)      // set Pkenc
 		buffer.Write(keyBytes)
 	} else if keyType == ReadonlyKeyType {
 		keyBytes := make([]byte, 0)
-		keyBytes = append(keyBytes, byte(len(key.KeySet.ReadonlyKey.Apk))) // set length Apk
-		keyBytes = append(keyBytes, key.KeySet.ReadonlyKey.Apk[:]...)      // set Apk
+		keyBytes = append(keyBytes, byte(len(key.KeySet.ReadonlyKey.Address))) // set length Apk
+		keyBytes = append(keyBytes, key.KeySet.ReadonlyKey.Address[:]...)      // set Apk
 
-		keyBytes = append(keyBytes, byte(len(key.KeySet.ReadonlyKey.Skenc))) // set length Skenc
-		keyBytes = append(keyBytes, key.KeySet.ReadonlyKey.Skenc[:]...)      // set Pkenc
+		keyBytes = append(keyBytes, byte(len(key.KeySet.ReadonlyKey.ReceivingKey))) // set length Skenc
+		keyBytes = append(keyBytes, key.KeySet.ReadonlyKey.ReceivingKey[:]...)      // set Pkenc
 		buffer.Write(keyBytes)
 	}
 
@@ -159,14 +159,14 @@ func Deserialize(data []byte) (*Key, error) {
 		copy(key.KeySet.PrivateKey[:], data[39:39+keyLength])
 	} else if keyType == PubKeyType {
 		apkKeyLength := int(data[1])
-		copy(key.KeySet.PublicKey.Apk[:], data[2:2+apkKeyLength])
+		copy(key.KeySet.PublicKey.Address[:], data[2:2+apkKeyLength])
 		pkencKeyLength := int(data[apkKeyLength+2])
-		copy(key.KeySet.PublicKey.Pkenc[:], data[3+apkKeyLength:3+apkKeyLength+pkencKeyLength])
+		copy(key.KeySet.PublicKey.TransmissionKey[:], data[3+apkKeyLength:3+apkKeyLength+pkencKeyLength])
 	} else if keyType == ReadonlyKeyType {
 		apkKeyLength := int(data[1])
-		copy(key.KeySet.ReadonlyKey.Apk[:], data[2:2+apkKeyLength])
+		copy(key.KeySet.ReadonlyKey.Address[:], data[2:2+apkKeyLength])
 		skencKeyLength := int(data[apkKeyLength+2])
-		copy(key.KeySet.ReadonlyKey.Skenc[:], data[3+apkKeyLength:3+apkKeyLength+skencKeyLength])
+		copy(key.KeySet.ReadonlyKey.ReceivingKey[:], data[3+apkKeyLength:3+apkKeyLength+skencKeyLength])
 	}
 
 	// validate checksum

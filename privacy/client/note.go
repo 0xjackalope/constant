@@ -23,7 +23,7 @@ const CMPreImageLength = 105 // bytes
 
 type Note struct {
 	Value                uint64
-	Apk                  SpendingAddress
+	Apk                  []byte
 	Rho, R, Nf, Cm, Memo []byte
 }
 
