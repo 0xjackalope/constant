@@ -76,7 +76,30 @@ type Params struct {
 	GenerateSupported bool
 }
 
-var pposValidators = []string{
+// TODO: generate for mainnet
+var preSelectValidatorsMainnet = []string{}
+
+// MainNetParams defines the network parameters for the main coin network.
+var MainNetParams = Params{
+	Name:        MainetName,
+	Net:         Mainnet,
+	DefaultPort: MainnetDefaultPort,
+	DNSSeeds: []string{
+		/*{"seed.coin.sipa.be", true},
+		{"dnsseed.bluematt.me", true},
+		{"dnsseed.coin.dashjr.org", false},
+		{"seed.coinstats.com", true},
+		{"seed.bitnodes.io", false},
+		{"seed.coin.jonasschnelli.ch", true},*/
+		//"/ip4/127.0.0.1/tcp/9333/ipfs/QmRuvXN7BpTqxqpPLSftDFbKEYiRZRUb7iqZJcz2CxFvVS",
+	},
+
+	// blockChain parameters
+	GenesisBlock: GenesisBlockGenerator{}.CreateGenesisBlockPoSParallel(0x18aea41a, 0x1d00ffff, 1, MainnetGenesisblockPaymentAddress, preSelectValidatorsMainnet, MainnetInitFundSalary),
+}
+
+// TestNetParams defines the network parameters for the test coin network.
+var preSelectValidatorsTestnet = []string{
 	"1YYse7WkP3yjHrX6zfdCwtpyzgNVCAgiXnu1jbtaLqYmPU9tErFd2vm4JAUYXjo8LJFJs3ngZJERYYzVe3XJAC7GB6HZy8",
 	"1CQfmbeysZj3V6GPCkVKkdcLDMt9tgHAk8RuF3vnV8shaDibZvREo5CccwVnxypMVRPkEJ5joK79wwCvDvDaZJVQ2uBQ2M",
 	"1UJwNHRTnTmGLAxaLirX9DkbH6jk2yhvLUTep5AnQD5pHzHXGh48vN2uJAnwLAJ7YFbsRRYujtizwyVDu87qUkdgdJq5Xt",
@@ -98,27 +121,6 @@ var pposValidators = []string{
 	"1H1sFe3LUbtDu3ZkbPgDAMHiqz9ryUG1VLhLsPGA2nXdMdkqDkh8sER9AfoDyBhTaHLx9jT4bxUADZe2dvbGX6NsBKirCF",
 	"1TuVSHsrsmfgHYtTb42UKCghdvyR6GyccjGF3mk53j9f5Qs6DcHfRV2ePpVTLzpNstTSciS3AAYhE91eNogrk7h5gSb7R7",
 }
-
-// MainNetParams defines the network parameters for the main coin network.
-var MainNetParams = Params{
-	Name:        MainetName,
-	Net:         Mainnet,
-	DefaultPort: MainnetDefaultPort,
-	DNSSeeds: []string{
-		/*{"seed.coin.sipa.be", true},
-		{"dnsseed.bluematt.me", true},
-		{"dnsseed.coin.dashjr.org", false},
-		{"seed.coinstats.com", true},
-		{"seed.bitnodes.io", false},
-		{"seed.coin.jonasschnelli.ch", true},*/
-		//"/ip4/127.0.0.1/tcp/9333/ipfs/QmRuvXN7BpTqxqpPLSftDFbKEYiRZRUb7iqZJcz2CxFvVS",
-	},
-
-	// blockChain parameters
-	GenesisBlock: GenesisBlockGenerator{}.CreateGenesisBlockPoSParallel(0x18aea41a, 0x1d00ffff, 1, MainnetGenesisblockPaymentAddress, pposValidators, MainnetInitFundSalary),
-}
-
-// TestNetParams defines the network parameters for the test coin network.
 var TestNetParams = Params{
 	Name:        TestnetName,
 	Net:         Testnet,
@@ -134,5 +136,5 @@ var TestNetParams = Params{
 	},
 
 	// blockChain parameters
-	GenesisBlock: GenesisBlockGenerator{}.CreateGenesisBlockPoSParallel(0x18aea41a, 0x1d00ffff, 1, TestnetGenesisBlockPaymentAddress, pposValidators, TestnetInitFundSalary),
+	GenesisBlock: GenesisBlockGenerator{}.CreateGenesisBlockPoSParallel(0x18aea41a, 0x1d00ffff, 1, TestnetGenesisBlockPaymentAddress, preSelectValidatorsTestnet, TestnetInitFundSalary),
 }
