@@ -15,9 +15,9 @@ type KeySet struct {
 GenerateKey - generate key set from seed byte[]
 */
 func (self *KeySet) GenerateKey(seed []byte) *KeySet {
-	self.PrivateKey = privacy.GenSpendingKey(seed)
-	self.PublicKey = privacy.GenPaymentAddress(self.PrivateKey)
-	self.ReadonlyKey = privacy.GenViewingKey(self.PrivateKey)
+	self.PrivateKey = privacy.GenerateSpendingKey(seed)
+	self.PublicKey = privacy.GeneratePaymentAddress(self.PrivateKey)
+	self.ReadonlyKey = privacy.GenerateViewingKey(self.PrivateKey)
 	return self
 }
 
@@ -26,8 +26,8 @@ ImportFromPrivateKeyByte - from private-key byte[], regenerate pub-key and reado
 */
 func (self *KeySet) ImportFromPrivateKeyByte(privateKey []byte) {
 	copy(self.PrivateKey[:], privateKey)
-	self.PublicKey = privacy.GenPaymentAddress(self.PrivateKey)
-	self.ReadonlyKey = privacy.GenViewingKey(self.PrivateKey)
+	self.PublicKey = privacy.GeneratePaymentAddress(self.PrivateKey)
+	self.ReadonlyKey = privacy.GenerateViewingKey(self.PrivateKey)
 }
 
 /*
@@ -35,8 +35,8 @@ ImportFromPrivateKeyByte - from private-key data, regenerate pub-key and readonl
 */
 func (self *KeySet) ImportFromPrivateKey(privateKey *privacy.SpendingKey) {
 	self.PrivateKey = *privateKey
-	self.PublicKey = privacy.GenPaymentAddress(self.PrivateKey)
-	self.ReadonlyKey = privacy.GenViewingKey(self.PrivateKey)
+	self.PublicKey = privacy.GeneratePaymentAddress(self.PrivateKey)
+	self.ReadonlyKey = privacy.GenerateViewingKey(self.PrivateKey)
 }
 
 /*
