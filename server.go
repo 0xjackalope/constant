@@ -452,7 +452,7 @@ func (self Server) Start() {
 		go self.Stop()
 		return
 	}
-	if cfg.Generate == true && len(cfg.SealerSpendingKey) > 0 {
+	if cfg.Generate == true && len(cfg.SealerPrivateKey) > 0 {
 		sealerKeySet, err := cfg.GetSealerKeySet()
 		if err != nil {
 			Logger.log.Critical(err)
@@ -542,7 +542,7 @@ func (self *Server) NewPeerConfig() *peer.Config {
 	if err != nil {
 		Logger.log.Critical(err)
 	}
-	if len(keySetSealer.PrivateKey) != 0 {
+	if keySetSealer != nil && len(keySetSealer.PrivateKey) != 0 {
 		config.SealerKeySet = keySetSealer
 	}
 	return config

@@ -219,7 +219,7 @@ func (self *Engine) StartSealer(sealerKeySet cashec.KeySet) {
 	self.cQuitSealer = make(chan struct{})
 	self.cBlockSig = make(chan blockSig)
 	self.sealerStarted = true
-	Logger.log.Info("Starting sealer with public key: " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)))
+	Logger.log.Info("Starting sealer with public key address(base58check.encode): " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)))
 
 	go func() {
 		for {
