@@ -30,6 +30,7 @@ type params struct {
 	WalletName        string `long:"wallet" description:"Wallet Database Name file, default is 'wallet'"`
 	WalletPassphrase  string `long:"walletpassphrase" description:"Wallet passphrase"`
 	WalletAccountName string `long:"walletaccountname" description:"Wallet account name"`
+	WalletAccountNum  uint32 `long:"walletaccountnum" description:"Wallet account number"`
 }
 
 // newConfigParser returns a new command line flags parser.

@@ -13,7 +13,6 @@ import (
 	"github.com/ninjadotorg/cash/blockchain"
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/common/base58"
 	"github.com/ninjadotorg/cash/rpcserver/jsonresult"
 	"github.com/ninjadotorg/cash/transaction"
 	"github.com/ninjadotorg/cash/wallet"
@@ -55,6 +54,8 @@ var RpcHandler = map[string]commandHandler{
 	SendRegistration:              RpcServer.handleSendRegistration,
 	GetMempoolInfo:                RpcServer.handleGetMempoolInfo,
 
+	GetCndList: RpcServer.handleGetCndList,
+
 	//POS
 	GetHeader: RpcServer.handleGetHeader, // Current committee, next block committee and candidate is included in block header
 }
@@ -72,7 +73,7 @@ var RpcLimited = map[string]commandHandler{
 	GetBalance:            RpcServer.handleGetBalance,
 	GetReceivedByAccount:  RpcServer.handleGetReceivedByAccount,
 	SetTxFee:              RpcServer.handleSetTxFee,
-	CreateSealerKeyset:    RpcServer.handleCreateSealerKeySet,
+	/*CreateSealerKeyset:    RpcServer.handleCreateSealerKeySet,*/
 }
 
 func (self RpcServer) handleGetHeader(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -643,12 +644,12 @@ func (self RpcServer) handleSendRawRegistration(params interface{}, closeChan <-
 	Logger.log.Infof("there is priority of transaction in pool: %d", txDesc.StartingPriority)
 
 	// broadcast message
-	txMsg, err := wire.MakeEmptyMessage(wire.CmdTx)
+	txMsg, err := wire.MakeEmptyMessage(wire.CmdRegisteration)
 	if err != nil {
 		return nil, err
 	}
 
-	txMsg.(*wire.MessageTx).Transaction = &tx
+	txMsg.(*wire.MessageRegisteration).Transaction = &tx
 	self.config.Server.PushMessageToAll(txMsg)
 
 	return tx.Hash(), nil
@@ -1294,7 +1295,7 @@ func (self RpcServer) handleSetTxFee(params interface{}, closeChan <-chan struct
 	return err == nil, NewRPCError(ErrUnexpected, err)
 }
 
-func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+/*func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender
 	senderKey, err := wallet.Base58CheckDeserialize(params.(string))
 	if err != nil {
@@ -1309,7 +1310,7 @@ func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-c
 	result["SealerKeySet"] = sealerKeySet.EncodeToString()
 	result["SealerPublicKey"] = base58.Base58Check{}.Encode(sealerKeySet.SpublicKey, byte(0x00))
 	return result, nil
-}
+}*/
 
 func (self RpcServer) handleGetCndList(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender

@@ -26,7 +26,7 @@ type Key struct {
 // NewMasterKey creates a new master extended Key from a Seed
 func NewMasterKey(seed []byte) (*Key, error) {
 	// Generate Key and chaincode
-	hmac := hmac.New(sha512.New, []byte("Bitcoin Seed"))
+	hmac := hmac.New(sha512.New, seed)
 	_, err := hmac.Write(seed)
 	if err != nil {
 		Logger.log.Error(err)
@@ -155,17 +155,21 @@ func Deserialize(data []byte) (*Key, error) {
 		key.ChildNumber = data[2:6]
 		key.ChainCode = data[6:38]
 		keyLength := int(data[38])
-
+		key.KeySet.PrivateKey = make([]byte, keyLength)
 		copy(key.KeySet.PrivateKey[:], data[39:39+keyLength])
 	} else if keyType == PubKeyType {
 		apkKeyLength := int(data[1])
+		key.KeySet.PublicKey.Address = make([]byte, apkKeyLength)
 		copy(key.KeySet.PublicKey.Address[:], data[2:2+apkKeyLength])
 		pkencKeyLength := int(data[apkKeyLength+2])
+		key.KeySet.PublicKey.TransmissionKey = make([]byte, pkencKeyLength)
 		copy(key.KeySet.PublicKey.TransmissionKey[:], data[3+apkKeyLength:3+apkKeyLength+pkencKeyLength])
 	} else if keyType == ReadonlyKeyType {
 		apkKeyLength := int(data[1])
+		key.KeySet.PublicKey.Address = make([]byte, apkKeyLength)
 		copy(key.KeySet.ReadonlyKey.Address[:], data[2:2+apkKeyLength])
 		skencKeyLength := int(data[apkKeyLength+2])
+		key.KeySet.ReadonlyKey.ReceivingKey = make([]byte, skencKeyLength)
 		copy(key.KeySet.ReadonlyKey.ReceivingKey[:], data[3+apkKeyLength:3+apkKeyLength+skencKeyLength])
 	}
 

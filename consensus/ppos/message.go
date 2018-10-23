@@ -15,7 +15,7 @@ func (self *Engine) OnRequestSign(msgBlock *wire.MessageRequestBlockSign) {
 			Reason:    err.Error(),
 			BlockHash: block.Hash().String(),
 			ChainID:   block.Header.ChainID,
-			Validator: base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00)),
+			Validator: base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)),
 		}
 		dataByte, _ := invalidBlockMsg.JsonSerialize()
 		invalidBlockMsg.ValidatorSig, err = self.signData(dataByte)
@@ -40,7 +40,7 @@ func (self *Engine) OnRequestSign(msgBlock *wire.MessageRequestBlockSign) {
 	}
 	blockSigMsg := wire.MessageBlockSig{
 		BlockHash:    block.Hash().String(),
-		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00)),
+		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)),
 		ValidatorSig: sig,
 	}
 	peerID, err := peer2.IDB58Decode(msgBlock.SenderID)

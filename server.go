@@ -452,7 +452,7 @@ func (self Server) Start() {
 		go self.Stop()
 		return
 	}
-	if cfg.Generate == true && (len(cfg.SealerSpendingKey) > 0 || len(cfg.SealerKeySet) > 0) {
+	if cfg.Generate == true && len(cfg.SealerPrivateKey) > 0 {
 		sealerKeySet, err := cfg.GetSealerKeySet()
 		if err != nil {
 			Logger.log.Critical(err)
@@ -519,19 +519,16 @@ func (self *Server) InitListenerPeers(amgr *addrmanager.AddrManager, listenAddrs
 // newPeerConfig returns the configuration for the listening RemotePeer.
 */
 func (self *Server) NewPeerConfig() *peer.Config {
-	keysetSealer, err := cfg.GetSealerKeySet()
-	if err != nil {
-		Logger.log.Critical(err)
-	}
 	config := &peer.Config{
 		MessageListeners: peer.MessageListeners{
-			OnBlock:     self.OnBlock,
-			OnTx:        self.OnTx,
-			OnVersion:   self.OnVersion,
-			OnGetBlocks: self.OnGetBlocks,
-			OnVerAck:    self.OnVerAck,
-			OnGetAddr:   self.OnGetAddr,
-			OnAddr:      self.OnAddr,
+			OnBlock:         self.OnBlock,
+			OnTx:            self.OnTx,
+			OnRegisteration: self.OnRegisteration,
+			OnVersion:       self.OnVersion,
+			OnGetBlocks:     self.OnGetBlocks,
+			OnVerAck:        self.OnVerAck,
+			OnGetAddr:       self.OnGetAddr,
+			OnAddr:          self.OnAddr,
 
 			//ppos
 			OnRequestSign:   self.OnRequestSign,
@@ -541,8 +538,13 @@ func (self *Server) NewPeerConfig() *peer.Config {
 			OnChainState:    self.OnChainState,
 		},
 	}
-	if len(keysetSealer.SprivateKey) != 0 {
-		config.SealerPrvKey = base58.Base58Check{}.Encode(keysetSealer.SprivateKey, byte(0x00))
+	// get key set sealer from config
+	keySetSealer, err := cfg.GetSealerKeySet()
+	if err != nil {
+		Logger.log.Critical(err)
+	}
+	if keySetSealer != nil && len(keySetSealer.PrivateKey) != 0 {
+		config.SealerKeySet = keySetSealer
 	}
 	return config
 }
@@ -580,6 +582,15 @@ func (self Server) OnTx(peer *peer.PeerConn, msg *wire.MessageTx) {
 	//<-txProcessed
 
 	Logger.log.Info("Receive a new transaction END")
+}
+
+func (self Server) OnRegisteration(peer *peer.PeerConn, msg *wire.MessageRegisteration) {
+	Logger.log.Info("Receive a new registeration START")
+	var txProcessed chan struct{}
+	self.netSync.QueueRegisteration(nil, msg, txProcessed)
+	//<-txProcessed
+
+	Logger.log.Info("Receive a new registeration END")
 }
 
 /*
@@ -869,13 +880,13 @@ func (self Server) PushVersionMessage(peerConn *peer.PeerConn) error {
 	msg.(*wire.MessageVersion).ProtocolVersion = self.protocolVersion
 
 	// Validate Public Key from SealerPrvKey
-	if peerConn.ListenerPeer.Config.SealerPrvKey != "" {
+	if peerConn.ListenerPeer.Config.SealerKeySet != nil {
 		keySet, err := cfg.GetSealerKeySet()
 		if err != nil {
 			Logger.log.Critical("Invalid sealer's private key")
 			return err
 		}
-		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.SpublicKey, byte(0x00))
+		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.PublicKey.Address, byte(0x00))
 	}
 
 	if err != nil {

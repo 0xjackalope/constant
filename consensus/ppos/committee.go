@@ -9,8 +9,6 @@ import (
 
 func (self *Engine) GetCommittee() []string {
 
-
-
 	return self.config.BlockChain.BestState[0].BestBlock.Header.Committee
 }
 
@@ -38,7 +36,7 @@ func (self *Engine) signData(data []byte) (string, error) {
 // getMyChain validator chainID and committee of that chainID
 func (self *Engine) getMyChain() byte {
 	committee := self.GetCommittee()
-	pkey := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+	pkey := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00))
 	for idx := byte(0); idx < byte(common.TotalValidators); idx++ {
 		validator := committee[int((1+int(idx))%common.TotalValidators)]
 		if pkey == validator {

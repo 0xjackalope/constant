@@ -1,14 +1,6 @@
 package cashec
 
-import (
-	"bytes"
-	"encoding/json"
-	"github.com/ninjadotorg/cash/common/base58"
-	"github.com/ninjadotorg/cash/privacy"
-	"golang.org/x/crypto/ed25519"
-)
-
-type KeySetSealer struct {
+/*type KeySetSealer struct {
 	SprivateKey     []byte
 	SpublicKey      []byte
 	SpendingAddress []byte
@@ -73,7 +65,7 @@ func (self *KeySetSealer) GetViewingKey() (privacy.ViewingKey, error) {
 	viewingKey.Address = self.SpendingAddress
 	viewingKey.ReceivingKey = self.ReceivingKey
 	return viewingKey, nil
-}
+}*/
 
 /*func ValidateDataB58(pubkey string, sig string, data []byte) error {
 	decPubkey, _, err := base58.Base58Check{}.Decode(pubkey)

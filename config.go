@@ -17,7 +17,7 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/common/base58"
+	"github.com/ninjadotorg/cash/wallet"
 )
 
 // default config
@@ -91,8 +91,8 @@ type config struct {
 	TestNet bool `long:"testnet" description:"Use the test network"`
 
 	// PoS config
-	SealerSpendingKey string `long:"sealerspendingkey" description:"!!!WARNING Leave this if you don't know what this is"`
-	SealerKeySet      string `long:"sealerkeyset" description:"Key-set of the block sealer used to seal block"`
+	SealerPrivateKey string `long:"sealerprivatekey" description:"!!!WARNING Leave this if you don't know what this is"`
+
 	// For Wallet
 	Wallet           bool   `long:"enablewallet" description:"Enable wallet"`
 	WalletName       string `long:"wallet" description:"Wallet Database Name file, default is 'wallet'"`
@@ -487,7 +487,7 @@ func loadConfig() (*config, []string, error) {
 
 	// Ensure there is at least one mining address when the generate flag is
 	// set.
-	if cfg.Generate && len(cfg.SealerKeySet) == 0 && len(cfg.SealerSpendingKey) == 0 {
+	if cfg.Generate && len(cfg.SealerPrivateKey) == 0 {
 		str := "%s: the generate flag is set, but there are no sealer's key specified "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
@@ -633,19 +633,14 @@ func parseAndSetDebugLevels(debugLevel string) error {
 	return nil
 }
 
-func (self *config) GetSealerKeySet() (*cashec.KeySetSealer, error) {
-	keysetSealer := &cashec.KeySetSealer{}
-	if len(self.SealerSpendingKey) != 0 {
-		Logger.log.Warn("!!NOT RECOMMENDED TO USE SPENDING KEY!!")
-		keySetUser := cashec.KeySet{}
-		spendingKeyByte, _, err := base58.Base58Check{}.Decode(self.SealerSpendingKey)
+func (self *config) GetSealerKeySet() (*cashec.KeySet, error) {
+	if len(self.SealerPrivateKey) != 0 {
+		keyObj, err := wallet.Base58CheckDeserialize(self.SealerPrivateKey)
 		if err != nil {
-			return keysetSealer, err
+			return nil, err
 		}
-		keySetUser.ImportFromPrivateKeyByte(spendingKeyByte)
-		keysetSealer, _ = keySetUser.CreateSealerKeySet()
-		return keysetSealer, nil
-	} else {
-		return keysetSealer.DecodeToKeySet(self.SealerKeySet)
+		keyObj.KeySet.ImportFromPrivateKey(&keyObj.KeySet.PrivateKey)
+		return &keyObj.KeySet, err
 	}
+	return nil, nil
 }
