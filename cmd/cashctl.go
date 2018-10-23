@@ -73,6 +73,10 @@ func main() {
 				}
 				log.Println(string(result))
 			}
+		case GenerateDummyPrivateKey:
+			{
+				generateDummyPrivateKey()
+			}
 		}
 	} else {
 		log.Println("Parse params error", err.Error())
