@@ -3,10 +3,10 @@ package cashec
 import (
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
 type KeySet struct {
-	// SealerKeyPair KeyPair
 	PrivateKey  privacy.SpendingKey
 	PublicKey   privacy.PaymentAddress
 	ReadonlyKey privacy.ViewingKey
@@ -18,7 +18,8 @@ GenerateKey - generate key set from seed byte[]
 func (self *KeySet) GenerateKey(seed []byte) *KeySet {
 	hash := common.HashB(seed)
 	hash[len(hash)-1] &= 0x0F // Private key only has 252 bits
-	copy(self.PrivateKey[:], hash)
+	self.PrivateKey = make([]byte, len(hash))
+	copy(self.PrivateKey, hash)
 	self.PublicKey = privacy.GenPaymentAddress(self.PrivateKey)
 	self.ReadonlyKey = privacy.GenViewingKey(self.PrivateKey)
 	return self
@@ -52,4 +53,17 @@ func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
 	sealerKeySet.TransmissionKey = self.PublicKey.TransmissionKey
 	sealerKeySet.ReceivingKey = self.ReadonlyKey.ReceivingKey
 	return &sealerKeySet, nil
+}
+
+func (self *KeySet) Verify(data, signature []byte) (bool, error) {
+	isValid := false
+	hash := common.HashB(data)
+	isValid = secp256k1.VerifySignature(self.PublicKey.Address, hash, signature)
+	return isValid, nil
+}
+
+func (self *KeySet) Sign(data []byte) ([]byte, error) {
+	hash := common.HashB(data)
+	result, err := secp256k1.Sign(hash, self.PrivateKey)
+	return result, err
 }
