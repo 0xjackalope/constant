@@ -57,9 +57,9 @@ func RandBits(n int) []byte {
 	return b
 }
 
-// GenSpendingKey generates a random SpendingKey
+// GenerateSpendingKey generates a random SpendingKey
 // SpendingKey: 32 bytes
-func GenSpendingKey(seed []byte) []byte {
+func GenerateSpendingKey(seed []byte) []byte {
 	temp := new(big.Int)
 	var spendingKey []byte
 	spendingKey = common.HashB(seed)
@@ -70,29 +70,29 @@ func GenSpendingKey(seed []byte) []byte {
 	return spendingKey
 }
 
-// GenAddress computes an address corresponding with spendingKey
+// GenerateAddress computes an address corresponding with spendingKey
 // Address : 64 bytes
-func GenAddress(spendingKey []byte) []byte {
+func GenerateAddress(spendingKey []byte) []byte {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
-	fmt.Println("p.X: %v", p.X)
-	fmt.Println("p.Y: %v", p.Y)
+	fmt.Printf("p.X: %v", p.X)
+	fmt.Printf("p.Y: %v", p.Y)
 	address := FromPointToByteArray(p)
 	return address
 }
 
-// GenReceivingKey computes a receiving key corresponding with spendingKey
+// GenerateReceivingKey computes a receiving key corresponding with spendingKey
 // ReceivingKey : 32 bytes
-func GenReceivingKey(spendingKey []byte) []byte {
+func GenerateReceivingKey(spendingKey []byte) []byte {
 	hash := sha256.Sum256(spendingKey)
 	receivingKey := make([]byte, 32)
 	copy(receivingKey, hash[:])
 	return receivingKey
 }
 
-// GenTransmissionKey computes a transmission key corresponding with receivingKey
+// GenerateTransmissionKey computes a transmission key corresponding with receivingKey
 // TransmissionKey : 64 bytes
-func GenTransmissionKey(receivingKey []byte) []byte {
+func GenerateTransmissionKey(receivingKey []byte) []byte {
 	var p, generator EllipticPoint
 	random := RandBits(256)
 	//create new generator from base generator
@@ -103,19 +103,19 @@ func GenTransmissionKey(receivingKey []byte) []byte {
 	return transmissionKey
 }
 
-// GenViewingKey generates a viewingKey corressponding with spendingKey
-func GenViewingKey(spendingKey []byte) ViewingKey {
+// GenerateViewingKey generates a viewingKey corressponding with spendingKey
+func GenerateViewingKey(spendingKey []byte) ViewingKey {
 	var viewingKey ViewingKey
-	viewingKey.Address = GenAddress(spendingKey)
-	viewingKey.ReceivingKey = GenReceivingKey(spendingKey)
+	viewingKey.Address = GenerateAddress(spendingKey)
+	viewingKey.ReceivingKey = GenerateReceivingKey(spendingKey)
 	return viewingKey
 }
 
-// GenPaymentAddress generates a payment address corressponding with spendingKey
-func GenPaymentAddress(spendingKey []byte) PaymentAddress {
+// GeneratePaymentAddress generates a payment address corressponding with spendingKey
+func GeneratePaymentAddress(spendingKey []byte) PaymentAddress {
 	var paymentAddress PaymentAddress
-	paymentAddress.Address = GenAddress(spendingKey)
-	paymentAddress.TransmissionKey = GenTransmissionKey(GenReceivingKey(spendingKey))
+	paymentAddress.Address = GenerateAddress(spendingKey)
+	paymentAddress.TransmissionKey = GenerateTransmissionKey(GenerateReceivingKey(spendingKey))
 	return paymentAddress
 }
 
