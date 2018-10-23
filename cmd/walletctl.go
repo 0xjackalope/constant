@@ -6,6 +6,7 @@ import (
 	"github.com/ninjadotorg/cash/wallet"
 	"log"
 	"errors"
+	"github.com/ninjadotorg/cash/common/base58"
 )
 
 func loadWallet() (*wallet.Wallet, error) {
@@ -61,4 +62,25 @@ func getAccount() (interface{}, error) {
 		}
 	}
 	return nil, errors.New("Not found")
+}
+
+func generateDummyPrivateKey() {
+	passPhrase := cfg.WalletPassphrase
+	numAccount := cfg.WalletAccountNum
+
+	if numAccount == 0 || passPhrase == "" {
+		log.Println("Error params")
+		return
+	}
+
+	walletObj := wallet.Wallet{}
+	walletObj.Init(passPhrase, uint32(numAccount), "")
+	log.Printf("Mnemonic: %s\n", walletObj.Mnemonic)
+	log.Printf("Passphrase: %s\n", walletObj.PassPhrase)
+	log.Printf("Master priv key: %s\n", walletObj.MasterAccount.Key.Base58CheckSerialize(wallet.PriKeyType))
+	for _, account := range walletObj.MasterAccount.Child {
+		log.Printf("\n\n")
+		log.Printf("%s private key:%s\n", account.Name, account.Key.Base58CheckSerialize(wallet.PriKeyType))
+		log.Printf("%s pubkey address(base58check.encode): %s\n", account.Name, base58.Base58Check{}.Encode(account.Key.KeySet.PublicKey.Address, byte(0x00)))
+	}
 }
