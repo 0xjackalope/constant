@@ -21,7 +21,6 @@ func Sign(hash []byte, spendingKey []byte) (signature []byte, err error) {
 	}
 	signature = SigToByteArray(r, s)
 	return
-
 }
 
 // Verify checks the signature that is signed by secret key corresponding with public key
@@ -31,7 +30,9 @@ func Verify(signature []byte, hash []byte, address []byte) bool {
 	verKey := new(ecdsa.PublicKey)
 	verKey.Curve = Curve
 
-	point := FromByteArrayToPoint(address)
+	point := new(EllipticPoint)
+
+	point, _ = DecompressKey(address)
 	verKey.X = point.X
 	verKey.Y = point.Y
 

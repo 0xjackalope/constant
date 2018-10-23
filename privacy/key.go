@@ -4,6 +4,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -12,6 +13,18 @@ import (
 
 // Curve P256
 var Curve = elliptic.P256()
+
+// const (
+// 	P = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
+// 	N = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+// 	B = 0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B
+// )
+
+// These constants define the lengths of serialized public keys.
+const (
+	PubKeyBytesLenCompressed      = 33
+	pubkeyCompressed         byte = 0x2 // y_bit + x coord
+)
 
 // fmt.Printf("N: %v\n", curve.N)
 // fmt.Printf("P: %v\n", curve.P)
@@ -23,21 +36,21 @@ var Curve = elliptic.P256()
 // SpendingKey 32 bytes
 type SpendingKey []byte
 
-// EllipticPoint represents an point of ellipctic secp256k1
+// EllipticPoint represents an point of ellipctic
 type EllipticPoint struct {
 	X, Y *big.Int
 }
 
 // ViewingKey represents an key that be used to view transactions
 type ViewingKey struct {
-	Address      []byte // 64 bytes, use to receive coin
+	Address      []byte // 33 bytes, use to receive coin
 	ReceivingKey []byte // 32 bytes, use to decrypt pointByte
 }
 
 // PaymentAddress represents an payment address of receiver
 type PaymentAddress struct {
-	Address         []byte // 64 bytes, use to receive coin
-	TransmissionKey []byte // 64 bytes, use to encrypt pointByte
+	Address         []byte // 33 bytes, use to receive coin
+	TransmissionKey []byte // 33 bytes, use to encrypt pointByte
 }
 
 type PaymentInfo struct {
@@ -71,13 +84,14 @@ func GenerateSpendingKey(seed []byte) []byte {
 }
 
 // GenerateAddress computes an address corresponding with spendingKey
-// Address : 64 bytes
+// Address : 33 bytes
 func GenerateAddress(spendingKey []byte) []byte {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
 	fmt.Printf("p.X: %v", p.X)
 	fmt.Printf("p.Y: %v", p.Y)
-	address := FromPointToByteArray(p)
+	// address := FromPointToByteArray(p)
+	address := CompressKey(p)
 	return address
 }
 
@@ -91,15 +105,17 @@ func GenerateReceivingKey(spendingKey []byte) []byte {
 }
 
 // GenerateTransmissionKey computes a transmission key corresponding with receivingKey
-// TransmissionKey : 64 bytes
+// TransmissionKey : 33 bytes
 func GenerateTransmissionKey(receivingKey []byte) []byte {
 	var p, generator EllipticPoint
 	random := RandBits(256)
 	//create new generator from base generator
-	generator.X, generator.Y = Curve.Params().ScalarBaseMult(random)
+	generator.X, generator.Y = Curve.ScalarBaseMult(random)
 
-	p.X, p.Y = Curve.Params().ScalarMult(generator.X, generator.Y, receivingKey)
-	transmissionKey := FromPointToByteArray(p)
+	p.X, p.Y = Curve.ScalarMult(generator.X, generator.Y, receivingKey)
+	fmt.Printf("Transmission key point: %+v\n ", p)
+	// transmissionKey := FromPointToByteArray(p)
+	transmissionKey := CompressKey(p)
 	return transmissionKey
 }
 
@@ -135,4 +151,124 @@ func FromByteArrayToPoint(pointByte []byte) EllipticPoint {
 	point.X = new(big.Int).SetBytes(pointByte[0:32])
 	point.Y = new(big.Int).SetBytes(pointByte[32:64])
 	return *point
+}
+
+// CompressKey compresses key from 64 bytes to 33 bytes
+func CompressKey(point EllipticPoint) []byte {
+	b := make([]byte, 0, PubKeyBytesLenCompressed)
+	format := pubkeyCompressed
+	if isOdd(point.Y) {
+		format |= 0x1
+	}
+	b = append(b, format)
+	return paddedAppend(32, b, point.X.Bytes())
+}
+
+func isOdd(a *big.Int) bool {
+	return a.Bit(0) == 1
+}
+
+// DecompressKey decompress public key to elliptic point
+func DecompressKey(pubKeyStr []byte) (pubkey *EllipticPoint, err error) {
+
+	if len(pubKeyStr) == 0 || len(pubKeyStr) != 33 {
+		return nil, errors.New("pubkey string is wrong")
+	}
+
+	format := pubKeyStr[0]
+	ybit := (format & 0x1) == 0x1
+	format &= ^byte(0x1)
+
+	pubkey = new(EllipticPoint)
+
+	// format is 0x2 | solution, <X coordinate>
+	// solution determines which solution of the curve we use.
+	/// y^2 = x^3 - 3*x + Curve.B
+	if format != pubkeyCompressed {
+		return nil, fmt.Errorf("invalid magic in compressed "+
+			"pubkey string: %d", pubKeyStr[0])
+	}
+	pubkey.X = new(big.Int).SetBytes(pubKeyStr[1:33])
+	pubkey.Y, err = decompressPoint(pubkey.X, ybit)
+	if err != nil {
+		return nil, err
+	}
+
+	if pubkey.X.Cmp(Curve.Params().P) >= 0 {
+		return nil, fmt.Errorf("pubkey X parameter is >= to P")
+	}
+	if pubkey.Y.Cmp(Curve.Params().P) >= 0 {
+		return nil, fmt.Errorf("pubkey Y parameter is >= to P")
+	}
+	if !Curve.Params().IsOnCurve(pubkey.X, pubkey.Y) {
+		return nil, fmt.Errorf("pubkey isn't on P256 curve")
+	}
+	return pubkey, nil
+}
+
+// decompressPoint decompresses a point on the given curve given the X point and
+// the solution to use.
+func decompressPoint(x *big.Int, ybit bool) (*big.Int, error) {
+	Q := Curve.Params().P
+	temp := new(big.Int)
+	xTemp := new(big.Int)
+
+	// Y = +-sqrt(x^3 - 3*x + B)
+	x3 := new(big.Int).Mul(x, x)
+	x3.Mul(x3, x)
+	x3.Add(x3, Curve.Params().B)
+	x3.Sub(x3, xTemp.Mul(x, new(big.Int).SetInt64(3)))
+	x3.Mod(x3, Curve.Params().P)
+
+	//check P = 3 mod 4?
+	if temp.Mod(Q, new(big.Int).SetInt64(4)).Cmp(new(big.Int).SetInt64(3)) == 0 {
+		fmt.Println("Ok!!!")
+	}
+
+	// Now calculate sqrt mod p of x^3 - 3*x + B
+	// This code used to do a full sqrt based on tonelli/shanks,
+	// but this was replaced by the algorithms referenced in
+	// https://bitcointalk.org/index.php?topic=162805.msg1712294#msg1712294
+
+	y := new(big.Int).Exp(x3, PAdd1Div4(Q), Q)
+	fmt.Printf("y: %X\n", y)
+
+	if ybit != isOdd(y) {
+		y.Sub(Curve.Params().P, y)
+	}
+
+	// Check that y is a square root of x^3  - 3*x + B.
+	y2 := new(big.Int).Mul(y, y)
+	y2.Mod(y2, Curve.Params().P)
+	fmt.Printf("y2: %X\n", y2)
+	fmt.Printf("x3: %X\n", x3)
+	if y2.Cmp(x3) != 0 {
+		return nil, fmt.Errorf("invalid square root")
+	}
+
+	// Verify that y-coord has expected parity.
+	if ybit != isOdd(y) {
+		return nil, fmt.Errorf("ybit doesn't match oddness")
+	}
+
+	return y, nil
+}
+
+// PAdd1Div4 computes (p + 1) mod 4
+func PAdd1Div4(p *big.Int) (res *big.Int) {
+	res = new(big.Int)
+	res.Add(p, new(big.Int).SetInt64(1))
+	res.Div(res, new(big.Int).SetInt64(4))
+	fmt.Printf("res: %v\n", res)
+	return
+}
+
+// paddedAppend appends the src byte slice to dst, returning the new slice.
+// If the length of the source is smaller than the passed size, leading zero
+// bytes are appended to the dst slice before appending src.
+func paddedAppend(size uint, dst, src []byte) []byte {
+	for i := 0; i < int(size)-len(src); i++ {
+		dst = append(dst, 0)
+	}
+	return append(dst, src...)
 }

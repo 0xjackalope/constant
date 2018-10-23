@@ -16,3 +16,11 @@ func TestGenerateSpendingKey(t *testing.T) {
 
 	assert.Equal(t, expectedResult, spendingKey)
 }
+
+func TestPAdd1Div4(t *testing.T) {
+	res := new(big.Int)
+	res = PAdd1Div4(new(big.Int).SetInt64(123))
+	expectedResult := new(big.Int).SetInt64(31)
+	assert.Equal(t, expectedResult, res)
+
+}
