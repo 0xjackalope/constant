@@ -7,6 +7,11 @@ fi
 TOTAL=$1
 SRC=$(pwd)
 
+DB_DIR=$2
+if [ "$DB_DIR" == "" ]; then
+  DB_DIR=$SRC/datadirs
+fi
+
 KEY1="112t8rnX2MipfoyC4v7DEZQuuddwEmmc6MJjMKpfXdVgeJMU4EzBy9qvH9KQyuc8uvWmBKecoBYAmnKWhp9yaV1acVFVHPeGXWYTKTnLuymj"
 KEY2="112t8rnXTWWvWGBHRUb936UrdswQafhAWngq2Mnvh9B4tKPvoQ3y3ZYDbB6nv7QSh64CqNcS2RqeGKLZ3sJ6o9wYjY3kVneLGWavzRDuu5Yq"
 KEY3="112t8rnXoyYJeCRStuF9uUA41nsSZUxLkeVCsEt5aiJVACZNcqfY7KmEgTE9tSocbvvJTbdoGDTSWwbwyJw4xwAri8SyYpYPibSPNwy7DbCR"
@@ -61,9 +66,9 @@ for ((i=1;i<=$TOTAL;i++));
 do
     PORT=$((2333 + $i))
     eval KEY=\${KEY$i}
-    
+
     # open new window in tmux
-    tmux new-window -d -n node$1 
+    tmux new-window -d -n node$1
 
     # remove data folder
     rm -rf data$i

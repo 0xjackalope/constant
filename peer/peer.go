@@ -107,6 +107,7 @@ type MessageListeners struct {
 	OnBlockSig      func(p *PeerConn, msg *wire.MessageBlockSig)
 	OnGetChainState func(p *PeerConn, msg *wire.MessageGetChainState)
 	OnChainState    func(p *PeerConn, msg *wire.MessageChainState)
+	OnRegisteration func(p *PeerConn, msg *wire.MessageRegisteration)
 }
 
 // outMsg is used to house a message to be sent along with a channel to signal
