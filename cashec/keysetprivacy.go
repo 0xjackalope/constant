@@ -1,9 +1,9 @@
 package cashec
 
 import (
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
 type KeySet struct {
@@ -16,10 +16,7 @@ type KeySet struct {
 GenerateKey - generate key set from seed byte[]
 */
 func (self *KeySet) GenerateKey(seed []byte) *KeySet {
-	hash := common.HashB(seed)
-	hash[len(hash)-1] &= 0x0F // Private key only has 252 bits
-	self.PrivateKey = make([]byte, len(hash))
-	copy(self.PrivateKey, hash)
+	self.PrivateKey = privacy.GenSpendingKey(seed)
 	self.PublicKey = privacy.GenPaymentAddress(self.PrivateKey)
 	self.ReadonlyKey = privacy.GenViewingKey(self.PrivateKey)
 	return self
@@ -45,7 +42,7 @@ func (self *KeySet) ImportFromPrivateKey(privateKey *privacy.SpendingKey) {
 
 /*
 Generate Sealer keyset from privacy key set
- */
+*/
 func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
 	var sealerKeySet KeySetSealer
 	sealerKeySet.GenerateKey(self.PrivateKey[:])

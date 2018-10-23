@@ -62,15 +62,11 @@ func RandBits(n int) []byte {
 func GenSpendingKey(seed []byte) []byte {
 	temp := new(big.Int)
 	var spendingKey []byte
-
 	spendingKey = common.HashB(seed)
 	for temp.SetBytes(spendingKey).Cmp(Curve.Params().N) == 1 {
 		spendingKey = common.HashB(spendingKey)
 	}
-	// spendingKey, err := RandFieldElement(Curve, rand.Reader)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+
 	return spendingKey
 }
 
