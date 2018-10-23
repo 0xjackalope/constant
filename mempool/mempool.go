@@ -170,6 +170,7 @@ func (tp *TxPool) maybeAcceptTransaction(tx transaction.Transaction) (*common.Ha
 	// end check with policy
 
 	// validate double spend for : normal tx, voting tx
+	// TODO: check double spend in mempool
 	if tx.GetType() == common.TxNormalType || tx.GetType() == common.TxVotingType {
 		txViewPoint, err := tp.config.BlockChain.FetchTxViewPoint(common.AssetTypeCoin, chainID)
 		if err != nil {
