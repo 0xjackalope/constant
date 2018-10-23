@@ -35,8 +35,8 @@ func Verify(signature []byte, hash []byte, address []byte) bool {
 	verKey.X = point.X
 	verKey.Y = point.Y
 
-	fmt.Println("verKey.X: %v", verKey.X)
-	fmt.Println("verKey.Y: %v", verKey.Y)
+	fmt.Printf("verKey.X: %v", verKey.X)
+	fmt.Printf("verKey.Y: %v", verKey.Y)
 
 	res := ecdsa.Verify(verKey, hash, r, s)
 	return res

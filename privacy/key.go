@@ -61,7 +61,7 @@ func RandBits(n int) []byte {
 // SpendingKey: 32 bytes
 func GenerateSpendingKey(seed []byte) []byte {
 	temp := new(big.Int)
-	var spendingKey []byte
+	spendingKey := make([]byte, 32)
 	spendingKey = common.HashB(seed)
 	for temp.SetBytes(spendingKey).Cmp(Curve.Params().N) == 1 {
 		spendingKey = common.HashB(spendingKey)

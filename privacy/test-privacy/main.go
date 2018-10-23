@@ -10,19 +10,19 @@ import (
 
 func main() {
 
-	spendingKey := privacy.GenSpendingKey(new(big.Int).SetInt64(123).Bytes())
+	spendingKey := privacy.GenerateSpendingKey(new(big.Int).SetInt64(123).Bytes())
 	fmt.Printf("\nSpending key: %v\n", spendingKey)
 	fmt.Println(len(spendingKey))
 
-	address := privacy.GenAddress(spendingKey)
+	address := privacy.GenerateAddress(spendingKey)
 	fmt.Printf("\nAddress: %v\n", address)
 	fmt.Println(len(address))
 
-	receivingKey := privacy.GenReceivingKey(spendingKey)
+	receivingKey := privacy.GenerateReceivingKey(spendingKey)
 	fmt.Printf("\nReceiving key: %v\n", receivingKey)
 	fmt.Println(len(receivingKey))
 
-	transmissionKey := privacy.GenTransmissionKey(receivingKey)
+	transmissionKey := privacy.GenerateTransmissionKey(receivingKey)
 	fmt.Printf("\nTransmission key: %v\n", transmissionKey)
 	fmt.Println(len(transmissionKey))
 
