@@ -10,7 +10,7 @@ import (
 	"github.com/ninjadotorg/cash/common"
 )
 
-// Using curve Secp256k1 with package github.com/ethereum/go-ethereum/crypto/secp256k1
+// Curve P256
 var Curve = elliptic.P256()
 
 // fmt.Printf("N: %v\n", curve.N)
@@ -20,7 +20,7 @@ var Curve = elliptic.P256()
 // fmt.Printf("Gy: %v\n", curve.Gy)
 // fmt.Printf("BitSize: %v\n", curve.BitSize)
 
-// secret x: SpendingKey: []byte, 32 bytes
+// SpendingKey 32 bytes
 type SpendingKey []byte
 
 // EllipticPoint represents an point of ellipctic secp256k1

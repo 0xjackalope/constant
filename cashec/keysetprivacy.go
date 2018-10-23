@@ -1,7 +1,6 @@
 package cashec
 
 import (
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
 )
@@ -55,12 +54,12 @@ func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
 func (self *KeySet) Verify(data, signature []byte) (bool, error) {
 	isValid := false
 	hash := common.HashB(data)
-	isValid = secp256k1.VerifySignature(self.PublicKey.Address, hash, signature)
+	isValid = privacy.Verify(signature, hash[:], self.PublicKey.Address)
 	return isValid, nil
 }
 
 func (self *KeySet) Sign(data []byte) ([]byte, error) {
 	hash := common.HashB(data)
-	result, err := secp256k1.Sign(hash, self.PrivateKey)
-	return result, err
+	signature, err := privacy.Sign(hash[:], self.PrivateKey)
+	return signature, err
 }

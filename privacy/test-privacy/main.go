@@ -29,12 +29,12 @@ func main() {
 	msg := "hello, world"
 	hash := sha256.Sum256([]byte(msg))
 
-	r, s, err := privacy.Sign(hash[:], spendingKey)
+	signature, err := privacy.Sign(hash[:], spendingKey)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("signature: (0x%x, 0x%x)\n", r, s)
+	fmt.Printf("signature: %v\n", signature)
 
-	valid := privacy.Verify(r, s, hash[:], address)
+	valid := privacy.Verify(signature, hash[:], address)
 	fmt.Println("signature verified:", valid)
 }

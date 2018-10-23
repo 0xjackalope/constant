@@ -8,23 +8,25 @@ import (
 )
 
 // Sign create signature for message with secret key
-func Sign(hash []byte, spendingKey []byte) (r, s *big.Int, err error) {
+func Sign(hash []byte, spendingKey []byte) (signature []byte, err error) {
 
 	signingKey := new(ecdsa.PrivateKey)
 	signingKey.PublicKey.Curve = Curve
 	signingKey.D = new(big.Int).SetBytes(spendingKey)
 	signingKey.PublicKey.X, signingKey.PublicKey.Y = Curve.ScalarBaseMult(spendingKey)
 
-	r, s, err = ecdsa.Sign(rand.Reader, signingKey, hash[:])
+	r, s, err := ecdsa.Sign(rand.Reader, signingKey, hash[:])
 	if err != nil {
-		fmt.Printf("\nSigning Error: %v\n", err)
+		return nil, err
 	}
+	signature = SigToByteArray(r, s)
 	return
 
 }
 
 // Verify checks the signature that is signed by secret key corresponding with public key
-func Verify(r, s *big.Int, hash []byte, address []byte) bool {
+func Verify(signature []byte, hash []byte, address []byte) bool {
+	r, s := FromByteArrayToSig(signature)
 
 	verKey := new(ecdsa.PublicKey)
 	verKey.Curve = Curve
@@ -38,4 +40,18 @@ func Verify(r, s *big.Int, hash []byte, address []byte) bool {
 
 	res := ecdsa.Verify(verKey, hash, r, s)
 	return res
+}
+
+// SigToByteArray converts signature to byte array
+func SigToByteArray(r, s *big.Int) (sig []byte) {
+	sig = append(sig, r.Bytes()...)
+	sig = append(sig, s.Bytes()...)
+	return
+}
+
+// FromByteArrayToSig converts a byte array to signature
+func FromByteArrayToSig(sig []byte) (r, s *big.Int) {
+	r = new(big.Int).SetBytes(sig[0:32])
+	s = new(big.Int).SetBytes(sig[32:64])
+	return
 }
