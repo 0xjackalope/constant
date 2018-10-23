@@ -25,7 +25,6 @@ func (blockgen *BlkTmplGenerator) NewBlockTemplate(payToAddress privacy.PaymentA
 		fmt.Sprintf(common.AssetTypeBond):     0,
 		fmt.Sprintf(common.AssetTypeGovToken): 0,
 		fmt.Sprintf(common.AssetTypeDcbToken): 0,
-		fmt.Sprintf(common.AssetTypeCmbToken): 0,
 	}
 
 	// Get reward
@@ -191,6 +190,7 @@ func (self BlkTmplGenerator) Init(txPool TxPool, chain *BlockChain, rewardAgent 
 	}, nil
 }
 
+/* TODO:
 func extractTxsAndComputeInitialFees(txDescs []*transaction.TxDesc) (
 	[]transaction.Transaction,
 	[]*transaction.ActionParamTx,
@@ -203,7 +203,6 @@ func extractTxsAndComputeInitialFees(txDescs []*transaction.TxDesc) (
 		fmt.Sprintf(common.AssetTypeBond):     0,
 		fmt.Sprintf(common.AssetTypeGovToken): 0,
 		fmt.Sprintf(common.AssetTypeDcbToken): 0,
-		fmt.Sprintf(common.AssetTypeCmbToken): 0,
 	}
 	for _, txDesc := range txDescs {
 		tx := txDesc.Tx
@@ -223,7 +222,7 @@ func extractTxsAndComputeInitialFees(txDescs []*transaction.TxDesc) (
 		feeMap[normalTx.Descs[0].Type] += txFee
 	}
 	return txs, actionParamTxs, feeMap
-}
+}*/
 
 // createSalaryTx
 // Blockchain use this tx to pay a reward(salary) to miner of chain
