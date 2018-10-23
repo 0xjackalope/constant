@@ -3,6 +3,9 @@ package cashec
 import (
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
+	"encoding/json"
+	"github.com/ninjadotorg/cash/common/base58"
+	"errors"
 )
 
 type KeySet struct {
@@ -62,4 +65,48 @@ func (self *KeySet) Sign(data []byte) ([]byte, error) {
 	hash := common.HashB(data)
 	signature, err := privacy.Sign(hash[:], self.PrivateKey)
 	return signature, err
+}
+
+func (self *KeySet) EncodeToString() string {
+	val, _ := json.Marshal(self)
+	result := base58.Base58Check{}.Encode(val, byte(0x00))
+	return result
+}
+
+func (self *KeySet) DecodeToKeySet(keystring string) (*KeySet, error) {
+	base58C := base58.Base58Check{}
+	keyBytes, _, _ := base58C.Decode(keystring)
+	json.Unmarshal(keyBytes, self)
+	return self, nil
+}
+
+func (self *KeySet) GetPaymentAddress() (privacy.PaymentAddress, error) {
+	return self.PublicKey, nil
+}
+
+func (self *KeySet) GetViewingKey() (privacy.ViewingKey, error) {
+	return self.ReadonlyKey, nil
+}
+
+func ValidateDataB58(pubkey string, sig string, data []byte) error {
+	decPubkey, _, err := base58.Base58Check{}.Decode(pubkey)
+	if err != nil {
+		return errors.New("can't decode public key:" + err.Error())
+	}
+
+	validatorKp := KeySet{}
+	validatorKp.PublicKey.Address = decPubkey
+	decSig, _, err := base58.Base58Check{}.Decode(sig)
+	if err != nil {
+		return errors.New("can't decode signature: " + err.Error())
+	}
+
+	isValid, err := validatorKp.Verify(data, decSig)
+	if err != nil {
+		return errors.New("error when verify data: " + err.Error())
+	}
+	if !isValid {
+		return errors.New("Invalid signature")
+	}
+	return nil
 }

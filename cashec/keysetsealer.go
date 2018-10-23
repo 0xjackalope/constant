@@ -3,8 +3,6 @@ package cashec
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-
 	"github.com/ninjadotorg/cash/common/base58"
 	"github.com/ninjadotorg/cash/privacy"
 	"golang.org/x/crypto/ed25519"
@@ -77,7 +75,7 @@ func (self *KeySetSealer) GetViewingKey() (privacy.ViewingKey, error) {
 	return viewingKey, nil
 }
 
-func ValidateDataB58(pubkey string, sig string, data []byte) error {
+/*func ValidateDataB58(pubkey string, sig string, data []byte) error {
 	decPubkey, _, err := base58.Base58Check{}.Decode(pubkey)
 	if err != nil {
 		return errors.New("can't decode public key:" + err.Error())
@@ -99,4 +97,4 @@ func ValidateDataB58(pubkey string, sig string, data []byte) error {
 		return errors.New("Invalid signature")
 	}
 	return nil
-}
+}*/
