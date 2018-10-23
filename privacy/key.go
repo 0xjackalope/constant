@@ -1,15 +1,17 @@
 package privacy
 
 import (
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
+	"github.com/ninjadotorg/cash/common"
 )
 
 // Using curve Secp256k1 with package github.com/ethereum/go-ethereum/crypto/secp256k1
-var curve = secp256k1.S256()
+var Curve = elliptic.P256()
 
 // fmt.Printf("N: %v\n", curve.N)
 // fmt.Printf("P: %v\n", curve.P)
@@ -27,14 +29,14 @@ type EllipticPoint struct {
 
 // ViewingKey represents an key that be used to view transactions
 type ViewingKey struct {
-	Address      []byte // 33 bytes, use to receive coin
-	ReceivingKey []byte // 32 bytes, use to decrypt data
+	Address      []byte // 64 bytes, use to receive coin
+	ReceivingKey []byte // 32 bytes, use to decrypt pointByte
 }
 
 // PaymentAddress represents an payment address of receiver
 type PaymentAddress struct {
-	Address         []byte // 33 bytes, use to receive coin
-	TransmissionKey []byte // 33 bytes, use to encrypt data
+	Address         []byte // 64 bytes, use to receive coin
+	TransmissionKey []byte // 64 bytes, use to encrypt pointByte
 }
 
 // RandBits generates random bits and return as bytes; zero out redundant bits
@@ -51,17 +53,29 @@ func RandBits(n int) []byte {
 
 // GenSpendingKey generates a random SpendingKey
 // SpendingKey: 32 bytes
-func GenSpendingKey() []byte {
-	spendingKey := RandBits(256)
+func GenSpendingKey(seed []byte) []byte {
+	temp := new(big.Int)
+	var spendingKey []byte
+
+	spendingKey = common.HashB(seed)
+	for temp.SetBytes(spendingKey).Cmp(Curve.Params().N) == 1 {
+		spendingKey = common.HashB(spendingKey)
+	}
+	// spendingKey, err := RandFieldElement(Curve, rand.Reader)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 	return spendingKey
 }
 
 // GenAddress computes an address corresponding with spendingKey
-// Address : 33 bytes
+// Address : 64 bytes
 func GenAddress(spendingKey []byte) []byte {
 	var p EllipticPoint
-	p.X, p.Y = curve.ScalarBaseMult(spendingKey)
-	address := secp256k1.CompressPubkey(p.X, p.Y)
+	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
+	fmt.Println("p.X: %v", p.X)
+	fmt.Println("p.Y: %v", p.Y)
+	address := FromPointToByteArray(p)
 	return address
 }
 
@@ -75,15 +89,15 @@ func GenReceivingKey(spendingKey []byte) []byte {
 }
 
 // GenTransmissionKey computes a transmission key corresponding with receivingKey
-// TransmissionKey : 33 bytes
+// TransmissionKey : 64 bytes
 func GenTransmissionKey(receivingKey []byte) []byte {
 	var p, generator EllipticPoint
 	random := RandBits(256)
 	//create new generator from base generator
-	generator.X, generator.Y = curve.ScalarBaseMult(random)
+	generator.X, generator.Y = Curve.Params().ScalarBaseMult(random)
 
-	p.X, p.Y = curve.ScalarMult(generator.X, generator.Y, receivingKey)
-	transmissionKey := secp256k1.CompressPubkey(p.X, p.Y)
+	p.X, p.Y = Curve.Params().ScalarMult(generator.X, generator.Y, receivingKey)
+	transmissionKey := FromPointToByteArray(p)
 	return transmissionKey
 }
 
@@ -101,4 +115,22 @@ func GenPaymentAddress(spendingKey []byte) PaymentAddress {
 	paymentAddress.Address = GenAddress(spendingKey)
 	paymentAddress.TransmissionKey = GenTransmissionKey(GenReceivingKey(spendingKey))
 	return paymentAddress
+}
+
+// FromPointToByteArray converts an elliptic point to byte array
+func FromPointToByteArray(p EllipticPoint) []byte {
+	var pointByte []byte
+	x := p.X.Bytes()
+	y := p.Y.Bytes()
+	pointByte = append(pointByte, x...)
+	pointByte = append(pointByte, y...)
+	return pointByte
+}
+
+// FromByteArrayToPoint converts a byte array to elliptic point
+func FromByteArrayToPoint(pointByte []byte) EllipticPoint {
+	point := new(EllipticPoint)
+	point.X = new(big.Int).SetBytes(pointByte[0:32])
+	point.Y = new(big.Int).SetBytes(pointByte[32:64])
+	return *point
 }

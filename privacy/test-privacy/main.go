@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"math/big"
 
 	"github.com/ninjadotorg/cash/privacy"
 )
@@ -36,7 +38,7 @@ func main() {
 
 	// fmt.Println(res)
 
-	spendingKey := privacy.GenSpendingKey()
+	spendingKey := privacy.GenSpendingKey(new(big.Int).SetInt64(123).Bytes())
 	fmt.Printf("\nSpending key: %v\n", spendingKey)
 	fmt.Println(len(spendingKey))
 
@@ -52,4 +54,15 @@ func main() {
 	fmt.Printf("\nTransmission key: %v\n", transmissionKey)
 	fmt.Println(len(transmissionKey))
 
+	msg := "hello, world"
+	hash := sha256.Sum256([]byte(msg))
+
+	r, s, err := privacy.Sign(hash[:], spendingKey)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("signature: (0x%x, 0x%x)\n", r, s)
+
+	valid := privacy.Verify(r, s, hash[:], address)
+	fmt.Println("signature verified:", valid)
 }

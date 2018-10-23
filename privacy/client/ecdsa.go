@@ -108,7 +108,7 @@ func GenerateKey(rand io.Reader) (*PrivateKey, error) {
 	}
 
 	priv := new(PrivateKey)
-	
+
 	priv.D = k
 	priv.PublicKey.X, priv.PublicKey.Y = elliptic.P256().ScalarBaseMult(k.Bytes())
 	return priv, nil
