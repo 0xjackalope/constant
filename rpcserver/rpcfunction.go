@@ -13,7 +13,6 @@ import (
 	"github.com/ninjadotorg/cash/blockchain"
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/common/base58"
 	"github.com/ninjadotorg/cash/rpcserver/jsonresult"
 	"github.com/ninjadotorg/cash/transaction"
 	"github.com/ninjadotorg/cash/wallet"
@@ -72,7 +71,7 @@ var RpcLimited = map[string]commandHandler{
 	GetBalance:            RpcServer.handleGetBalance,
 	GetReceivedByAccount:  RpcServer.handleGetReceivedByAccount,
 	SetTxFee:              RpcServer.handleSetTxFee,
-	CreateSealerKeyset:    RpcServer.handleCreateSealerKeySet,
+	/*CreateSealerKeyset:    RpcServer.handleCreateSealerKeySet,*/
 }
 
 func (self RpcServer) handleGetHeader(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
@@ -1294,7 +1293,7 @@ func (self RpcServer) handleSetTxFee(params interface{}, closeChan <-chan struct
 	return err == nil, NewRPCError(ErrUnexpected, err)
 }
 
-func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+/*func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender
 	senderKey, err := wallet.Base58CheckDeserialize(params.(string))
 	if err != nil {
@@ -1309,7 +1308,7 @@ func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-c
 	result["SealerKeySet"] = sealerKeySet.EncodeToString()
 	result["SealerPublicKey"] = base58.Base58Check{}.Encode(sealerKeySet.SpublicKey, byte(0x00))
 	return result, nil
-}
+}*/
 
 func (self RpcServer) handleGetCndList(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender

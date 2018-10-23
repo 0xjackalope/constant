@@ -45,14 +45,14 @@ func (self *KeySet) ImportFromPrivateKey(privateKey *privacy.SpendingKey) {
 /*
 Generate Sealer keyset from privacy key set
 */
-func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
+/*func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
 	var sealerKeySet KeySetSealer
 	sealerKeySet.GenerateKey(self.PrivateKey[:])
 	sealerKeySet.SpendingAddress = self.PublicKey.Address
 	sealerKeySet.TransmissionKey = self.PublicKey.TransmissionKey
 	sealerKeySet.ReceivingKey = self.ReadonlyKey.ReceivingKey
 	return &sealerKeySet, nil
-}
+}*/
 
 func (self *KeySet) Verify(data, signature []byte) (bool, error) {
 	isValid := false

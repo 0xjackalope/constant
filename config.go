@@ -92,7 +92,7 @@ type config struct {
 
 	// PoS config
 	SealerSpendingKey string `long:"sealerspendingkey" description:"!!!WARNING Leave this if you don't know what this is"`
-	SealerKeySet      string `long:"sealerkeyset" description:"Key-set of the block sealer used to seal block"`
+
 	// For Wallet
 	Wallet           bool   `long:"enablewallet" description:"Enable wallet"`
 	WalletName       string `long:"wallet" description:"Wallet Database Name file, default is 'wallet'"`
@@ -487,7 +487,7 @@ func loadConfig() (*config, []string, error) {
 
 	// Ensure there is at least one mining address when the generate flag is
 	// set.
-	if cfg.Generate && len(cfg.SealerKeySet) == 0 && len(cfg.SealerSpendingKey) == 0 {
+	if cfg.Generate && len(cfg.SealerSpendingKey) == 0 {
 		str := "%s: the generate flag is set, but there are no sealer's key specified "
 		err := fmt.Errorf(str, funcName)
 		fmt.Fprintln(os.Stderr, err)
@@ -633,8 +633,8 @@ func parseAndSetDebugLevels(debugLevel string) error {
 	return nil
 }
 
-func (self *config) GetSealerKeySet() (*cashec.KeySetSealer, error) {
-	keysetSealer := &cashec.KeySetSealer{}
+func (self *config) GetSealerKeySet() (*cashec.KeySet, error) {
+	keysetSealer := &cashec.KeySet{}
 	if len(self.SealerSpendingKey) != 0 {
 		Logger.log.Warn("!!NOT RECOMMENDED TO USE SPENDING KEY!!")
 		keySetUser := cashec.KeySet{}
@@ -643,9 +643,7 @@ func (self *config) GetSealerKeySet() (*cashec.KeySetSealer, error) {
 			return keysetSealer, err
 		}
 		keySetUser.ImportFromPrivateKeyByte(spendingKeyByte)
-		keysetSealer, _ = keySetUser.CreateSealerKeySet()
-		return keysetSealer, nil
-	} else {
-		return keysetSealer.DecodeToKeySet(self.SealerKeySet)
+		return &keySetUser, nil
 	}
+	return keysetSealer, nil
 }

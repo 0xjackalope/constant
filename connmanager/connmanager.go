@@ -17,7 +17,6 @@ import (
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/ninjadotorg/cash/bootnode/server"
-	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common/base58"
 	"github.com/ninjadotorg/cash/peer"
 	"github.com/ninjadotorg/cash/wire"
@@ -324,12 +323,8 @@ listen:
 
 				var publicKey string
 
-				if listener.Config.SealerPrvKey != EmptyString {
-					keySet := &cashec.KeySetSealer{}
-					_, err := keySet.Import(listener.Config.SealerPrvKey)
-					if err == nil {
-						publicKey = base58.Base58Check{}.Encode(keySet.SpublicKey, byte(0x00))
-					}
+				if listener.Config.SealerKeySet != nil {
+					publicKey = base58.Base58Check{}.Encode(listener.Config.SealerKeySet.PublicKey.Address, byte(0x00))
 				}
 
 				// remove later

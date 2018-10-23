@@ -452,7 +452,7 @@ func (self Server) Start() {
 		go self.Stop()
 		return
 	}
-	if cfg.Generate == true && (len(cfg.SealerSpendingKey) > 0 || len(cfg.SealerKeySet) > 0) {
+	if cfg.Generate == true && len(cfg.SealerSpendingKey) > 0 {
 		sealerKeySet, err := cfg.GetSealerKeySet()
 		if err != nil {
 			Logger.log.Critical(err)
@@ -519,10 +519,6 @@ func (self *Server) InitListenerPeers(amgr *addrmanager.AddrManager, listenAddrs
 // newPeerConfig returns the configuration for the listening RemotePeer.
 */
 func (self *Server) NewPeerConfig() *peer.Config {
-	keysetSealer, err := cfg.GetSealerKeySet()
-	if err != nil {
-		Logger.log.Critical(err)
-	}
 	config := &peer.Config{
 		MessageListeners: peer.MessageListeners{
 			OnBlock:     self.OnBlock,
@@ -541,8 +537,13 @@ func (self *Server) NewPeerConfig() *peer.Config {
 			OnChainState:    self.OnChainState,
 		},
 	}
-	if len(keysetSealer.SprivateKey) != 0 {
-		config.SealerPrvKey = base58.Base58Check{}.Encode(keysetSealer.SprivateKey, byte(0x00))
+	// get key set sealer from config
+	keySetSealer, err := cfg.GetSealerKeySet()
+	if err != nil {
+		Logger.log.Critical(err)
+	}
+	if len(keySetSealer.PrivateKey) != 0 {
+		config.SealerKeySet = keySetSealer
 	}
 	return config
 }
@@ -869,13 +870,13 @@ func (self Server) PushVersionMessage(peerConn *peer.PeerConn) error {
 	msg.(*wire.MessageVersion).ProtocolVersion = self.protocolVersion
 
 	// Validate Public Key from SealerPrvKey
-	if peerConn.ListenerPeer.Config.SealerPrvKey != "" {
+	if peerConn.ListenerPeer.Config.SealerKeySet != nil {
 		keySet, err := cfg.GetSealerKeySet()
 		if err != nil {
 			Logger.log.Critical("Invalid sealer's private key")
 			return err
 		}
-		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.SpublicKey, byte(0x00))
+		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.PublicKey.Address, byte(0x00))
 	}
 
 	if err != nil {

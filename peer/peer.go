@@ -20,6 +20,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/wire"
+	"github.com/ninjadotorg/cash/cashec"
 )
 
 // ConnState represents the state of the requested connection.
@@ -69,7 +70,7 @@ type NewStreamMsg struct {
 // config is the struct to hold configuration options useful to RemotePeer.
 type Config struct {
 	MessageListeners MessageListeners
-	SealerPrvKey     string
+	SealerKeySet     *cashec.KeySet
 	MaxOutbound      int
 	MaxInbound       int
 }
@@ -216,7 +217,7 @@ func (self *Peer) Start() {
 func (self *Peer) PushStream(stream net.Stream) {
 	newStreamMsg := NewStreamMsg{
 		Stream: stream,
-		CConn:   nil,
+		CConn:  nil,
 	}
 	self.cNewStream <- &newStreamMsg
 }
@@ -602,7 +603,7 @@ func (self *Peer) retryPeerConnection(peerConn *PeerConn) {
 			peerConn.updateConnState(ConnPending)
 			cConn := make(chan *PeerConn)
 			peerConn.ListenerPeer.PushConn(peerConn.RemotePeer, cConn)
-			p := <- cConn
+			p := <-cConn
 			if p == nil {
 				peerConn.RetryCount ++
 				go self.retryPeerConnection(peerConn)

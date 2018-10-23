@@ -64,7 +64,7 @@ type EngineConfig struct {
 	ChainParams     *blockchain.Params
 	BlockGen        *blockchain.BlkTmplGenerator
 	MemPool         *mempool.TxPool
-	ValidatorKeySet cashec.KeySetSealer
+	ValidatorKeySet cashec.KeySet
 	Server interface {
 		// list functions callback which are assigned from Server struct
 		GetPeerIDsFromPublicKey(string) []peer2.ID
@@ -209,7 +209,7 @@ func (self *Engine) Stop() error {
 }
 
 //StartSealer start sealing block
-func (self *Engine) StartSealer(sealerKeySet cashec.KeySetSealer) {
+func (self *Engine) StartSealer(sealerKeySet cashec.KeySet) {
 	if self.sealerStarted {
 		Logger.log.Error("Sealer already started")
 		return
@@ -219,7 +219,7 @@ func (self *Engine) StartSealer(sealerKeySet cashec.KeySetSealer) {
 	self.cQuitSealer = make(chan struct{})
 	self.cBlockSig = make(chan blockSig)
 	self.sealerStarted = true
-	Logger.log.Info("Starting sealer with public key: " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00)))
+	Logger.log.Info("Starting sealer with public key: " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)))
 
 	go func() {
 		for {
@@ -285,7 +285,7 @@ func (self *Engine) createBlock() (*blockchain.Block, error) {
 	newblock.Block.Header.ChainsHeight = make([]int, common.TotalValidators)
 	copy(newblock.Block.Header.ChainsHeight, self.validatedChainsHeight.Heights)
 	newblock.Block.Header.ChainID = myChainID
-	newblock.Block.ChainLeader = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+	newblock.Block.ChainLeader = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00))
 
 	// hash candidate list and set to block header
 	candidates := self.GetCndList(newblock.Block)
