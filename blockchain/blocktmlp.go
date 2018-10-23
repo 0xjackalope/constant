@@ -8,9 +8,10 @@ import (
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy/client"
 	"github.com/ninjadotorg/cash/transaction"
+	"github.com/ninjadotorg/cash/privacy"
 )
 
-func (blockgen *BlkTmplGenerator) NewBlockTemplate(payToAddress client.PaymentAddress, chainID byte) (*BlockTemplate, error) {
+func (blockgen *BlkTmplGenerator) NewBlockTemplate(payToAddress privacy.PaymentAddress, chainID byte) (*BlockTemplate, error) {
 
 	prevBlock := blockgen.chain.BestState[chainID]
 	prevBlockHash := blockgen.chain.BestState[chainID].BestBlock.Hash()
@@ -232,7 +233,7 @@ func extractTxsAndComputeInitialFees(txDescs []*transaction.TxDesc) (
 // #4 - chainID
 func createSalaryTx(
 	salary uint64,
-	receiverAddr *client.PaymentAddress,
+	receiverAddr *privacy.PaymentAddress,
 	rt []byte,
 	chainID byte,
 ) (*transaction.Tx, error) {
@@ -243,13 +244,17 @@ func createSalaryTx(
 	dummyAddress := client.GenPaymentAddress(*inputs[0].Key)
 
 	// Create new notes: first one is coinbase UTXO, second one has 0 value
-	outNote := &client.Note{Value: salary, Apk: receiverAddr.Apk}
-	placeHolderOutputNote := &client.Note{Value: 0, Apk: receiverAddr.Apk}
+	var temp []byte
+	copy(temp, receiverAddr.Address[:])
+	outNote := &client.Note{Value: salary, Apk: temp}
+	placeHolderOutputNote := &client.Note{Value: 0, Apk: temp}
 
+	var temp2 client.TransmissionKey
+	copy(temp2[:], receiverAddr.TransmissionKey[:])
 	outputs := []*client.JSOutput{&client.JSOutput{}, &client.JSOutput{}}
-	outputs[0].EncKey = receiverAddr.Pkenc
+	outputs[0].EncKey = temp2
 	outputs[0].OutputNote = outNote
-	outputs[1].EncKey = receiverAddr.Pkenc
+	outputs[1].EncKey = temp2
 	outputs[1].OutputNote = placeHolderOutputNote
 
 	// Generate proof and sign tx

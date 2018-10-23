@@ -21,6 +21,7 @@ var Curve = elliptic.P256()
 // fmt.Printf("BitSize: %v\n", curve.BitSize)
 
 // secret x: SpendingKey: []byte, 32 bytes
+type SpendingKey []byte
 
 // EllipticPoint represents an point of ellipctic secp256k1
 type EllipticPoint struct {
@@ -37,6 +38,11 @@ type ViewingKey struct {
 type PaymentAddress struct {
 	Address         []byte // 64 bytes, use to receive coin
 	TransmissionKey []byte // 64 bytes, use to encrypt pointByte
+}
+
+type PaymentInfo struct {
+	PaymentAddress PaymentAddress
+	Amount         uint64
 }
 
 // RandBits generates random bits and return as bytes; zero out redundant bits

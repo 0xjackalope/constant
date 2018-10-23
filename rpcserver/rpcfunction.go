@@ -14,12 +14,12 @@ import (
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/common/base58"
-	"github.com/ninjadotorg/cash/privacy/client"
 	"github.com/ninjadotorg/cash/rpcserver/jsonresult"
 	"github.com/ninjadotorg/cash/transaction"
 	"github.com/ninjadotorg/cash/wallet"
 	"github.com/ninjadotorg/cash/wire"
 	"golang.org/x/crypto/ed25519"
+	"github.com/ninjadotorg/cash/privacy"
 )
 
 type commandHandler func(RpcServer, interface{}, <-chan struct{}) (interface{}, error)
@@ -507,7 +507,7 @@ func (self RpcServer) handleCreateRegistration(params interface{}, closeChan <-c
 		return nil, nil
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Apk[len(senderKey.KeySet.PublicKey.Apk)-1]
+	lastByte := senderKey.KeySet.PublicKey.Address[len(senderKey.KeySet.PublicKey.Address)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, nil
@@ -516,8 +516,8 @@ func (self RpcServer) handleCreateRegistration(params interface{}, closeChan <-c
 	// param #2: list receiver
 	totalAmmount := int64(0)
 	receiversParam := int64(arrayParams[1].(float64))
-	paymentInfos := []*client.PaymentInfo{
-		&client.PaymentInfo{
+	paymentInfos := []*privacy.PaymentInfo{
+		&privacy.PaymentInfo{
 			Amount: uint64(receiversParam),
 		},
 	}
@@ -654,6 +654,7 @@ func (self RpcServer) handleSendRawRegistration(params interface{}, closeChan <-
 	return tx.Hash(), nil
 }
 
+// handleSendRegistration handle sendregistration commitee candidate command.
 func (self RpcServer) handleSendRegistration(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	hexStrOfTx, err := self.handleCreateRegistration(params, closeChan)
 	if err != nil {
@@ -681,7 +682,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Apk[len(senderKey.KeySet.PublicKey.Apk)-1]
+	lastByte := senderKey.KeySet.PublicKey.Address[len(senderKey.KeySet.PublicKey.Address)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
@@ -690,13 +691,13 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 	// param #2: list receiver
 	totalAmmount := int64(0)
 	receiversParam := arrayParams[1].(map[string]interface{})
-	paymentInfos := make([]*client.PaymentInfo, 0)
+	paymentInfos := make([]*privacy.PaymentInfo, 0)
 	for pubKeyStr, amount := range receiversParam {
 		receiverPubKey, err := wallet.Base58CheckDeserialize(pubKeyStr)
 		if err != nil {
 			return nil, NewRPCError(ErrUnexpected, err)
 		}
-		paymentInfo := &client.PaymentInfo{
+		paymentInfo := &privacy.PaymentInfo{
 			Amount:         uint64(amount.(float64)),
 			PaymentAddress: receiverPubKey.KeySet.PublicKey,
 		}

@@ -18,6 +18,7 @@ import (
 	"github.com/ninjadotorg/cash/privacy/client"
 	"github.com/ninjadotorg/cash/transaction"
 	"sort"
+	"github.com/ninjadotorg/cash/privacy"
 )
 
 const (
@@ -552,7 +553,11 @@ func (self *BlockChain) GetListTxByReadonlyKey(keySet *cashec.KeySet, coinType s
 								// copy(hSig, desc.HSigSeed)
 								hSig := client.HSigCRH(desc.HSigSeed, desc.Nullifiers[0], desc.Nullifiers[1], copyTx.JSPubKey)
 								note := new(client.Note)
-								note, err := client.DecryptNote(encData, keySet.ReadonlyKey.Skenc, keySet.PublicKey.Pkenc, epk, hSig)
+								var skenc client.ReceivingKey
+								var pkenc client.TransmissionKey
+								copy(skenc[:], keySet.ReadonlyKey.ReceivingKey[:])
+								copy(pkenc[:], keySet.PublicKey.TransmissionKey[:])
+								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								spew.Dump(note)
 								if err == nil && note != nil {
 									copyDesc.EncryptedData = append(copyDesc.EncryptedData, encData)
@@ -611,12 +616,14 @@ With private-key, we can check unspent tx by check nullifiers from database
 - Param #1: privateKey - byte[] of privatekey
 - Param #2: coinType - which type of joinsplitdesc(COIN or BOND)
 */
-func (self *BlockChain) GetListTxByPrivateKey(privateKey *client.SpendingKey, coinType string, sortType int, sortAsc bool) (map[byte][]transaction.Tx, error) {
+func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, coinType string, sortType int, sortAsc bool) (map[byte][]transaction.Tx, error) {
 	results := make(map[byte][]transaction.Tx)
 
 	// Get set of keys from private keybyte
 	keys := cashec.KeySet{}
-	keys.ImportFromPrivateKey(privateKey)
+	var temp privacy.SpendingKey
+	copy(temp[:], (*privateKey)[:])
+	keys.ImportFromPrivateKey(&temp)
 
 	// set default for params
 	if coinType == "" {
@@ -677,7 +684,11 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *client.SpendingKey, co
 								copy(epk[:], desc.EphemeralPubKey)
 								hSig := client.HSigCRH(desc.HSigSeed, desc.Nullifiers[0], desc.Nullifiers[1], copyTx.JSPubKey)
 								note := new(client.Note)
-								note, err := client.DecryptNote(encData, keys.ReadonlyKey.Skenc, keys.PublicKey.Pkenc, epk, hSig)
+								var skenc client.ReceivingKey
+								var pkenc client.TransmissionKey
+								copy(skenc[:], keys.ReadonlyKey.ReceivingKey[:])
+								copy(pkenc[:], keys.PublicKey.TransmissionKey[:])
+								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								if err == nil && note != nil && note.Value > 0 {
 									// can decrypt data -> got candidate commitment
 									candidateCommitment := desc.Commitments[i]
@@ -685,7 +696,9 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *client.SpendingKey, co
 										// -> check commitment with db nullifiers
 										var rho [32]byte
 										copy(rho[:], note.Rho)
-										candidateNullifier := client.GetNullifier(keys.PrivateKey, rho)
+										var temp client.SpendingKey
+										copy(temp[:], keys.PrivateKey)
+										candidateNullifier := client.GetNullifier(temp, rho)
 										if len(candidateNullifier) == 0 {
 											continue
 										}
@@ -698,7 +711,8 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *client.SpendingKey, co
 									copyDesc.EncryptedData = append(copyDesc.EncryptedData, encData)
 									copyDesc.AppendNote(note)
 									note.Cm = candidateCommitment
-									note.Apk = client.GenPaymentAddress(keys.PrivateKey).Apk
+
+									note.Apk = privacy.GenPaymentAddress(keys.PrivateKey).Address
 									copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 								} else {
 									continue
@@ -724,7 +738,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *client.SpendingKey, co
 								}
 								copyDesc.AppendNote(note)
 								note.Cm = candidateCommitment
-								note.Apk = client.GenPaymentAddress(keys.PrivateKey).Apk
+								note.Apk = privacy.GenPaymentAddress(keys.PrivateKey).Address
 								copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 							}
 						}

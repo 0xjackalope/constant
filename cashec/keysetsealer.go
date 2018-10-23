@@ -6,16 +6,16 @@ import (
 	"errors"
 
 	"github.com/ninjadotorg/cash/common/base58"
-	"github.com/ninjadotorg/cash/privacy/client"
+	"github.com/ninjadotorg/cash/privacy"
 	"golang.org/x/crypto/ed25519"
 )
 
 type KeySetSealer struct {
 	SprivateKey     []byte
 	SpublicKey      []byte
-	SpendingAddress [client.SpendingAddressLength]byte
-	TransmissionKey [client.TransmissionKeyLength]byte
-	ReceivingKey    [client.ReceivingKeyLength]byte
+	SpendingAddress []byte
+	TransmissionKey []byte
+	ReceivingKey    []byte
 }
 
 func (self *KeySetSealer) GenerateKey(seed []byte) (*KeySetSealer, error) {
@@ -63,17 +63,17 @@ func (self *KeySetSealer) DecodeToKeySet(keystring string) (*KeySetSealer, error
 	return self, nil
 }
 
-func (self *KeySetSealer) GetPaymentAddress() (client.PaymentAddress, error) {
-	var paymentAddr client.PaymentAddress
-	paymentAddr.Apk = self.SpendingAddress
-	paymentAddr.Pkenc = self.TransmissionKey
+func (self *KeySetSealer) GetPaymentAddress() (privacy.PaymentAddress, error) {
+	var paymentAddr privacy.PaymentAddress
+	paymentAddr.Address = self.SpendingAddress
+	paymentAddr.TransmissionKey = self.TransmissionKey
 	return paymentAddr, nil
 }
 
-func (self *KeySetSealer) GetViewingKey() (client.ViewingKey, error) {
-	var viewingKey client.ViewingKey
-	viewingKey.Apk = self.SpendingAddress
-	viewingKey.Skenc = self.ReceivingKey
+func (self *KeySetSealer) GetViewingKey() (privacy.ViewingKey, error) {
+	var viewingKey privacy.ViewingKey
+	viewingKey.Address = self.SpendingAddress
+	viewingKey.ReceivingKey = self.ReceivingKey
 	return viewingKey, nil
 }
 

@@ -3,7 +3,6 @@ package ppos
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -27,13 +26,11 @@ type Engine struct {
 	sealerStarted bool
 
 	// channel
-	cQuit          chan struct{}
-	cQuitSealer    chan struct{}
-	cBlockSig      chan blockSig
-	cQuitSwap      chan struct{}
-	cSwapReqDie    chan byte
-	cSwapReqPeriod chan byte
-	cSwapReqBad    chan byte
+	cQuit       chan struct{}
+	cQuitSealer chan struct{}
+	cBlockSig   chan blockSig
+	cQuitSwap   chan struct{}
+	cSwapChain  chan byte
 
 	config                EngineConfig
 	knownChainsHeight     chainsHeight
@@ -68,7 +65,7 @@ type EngineConfig struct {
 	BlockGen        *blockchain.BlkTmplGenerator
 	MemPool         *mempool.TxPool
 	ValidatorKeySet cashec.KeySetSealer
-	Server          interface {
+	Server interface {
 		// list functions callback which are assigned from Server struct
 		GetPeerIDsFromPublicKey(string) []peer2.ID
 		PushMessageToAll(wire.Message) error
@@ -119,7 +116,6 @@ func (self *Engine) Start() error {
 	if _, ok := self.config.FeeEstimator[0]; !ok {
 		// happen when FastMode = false
 		validatedChainsHeight := make([]int, common.TotalValidators)
-		self.config.FeeEstimator = make(map[byte]*mempool.FeeEstimator)
 		var wg sync.WaitGroup
 		errCh := make(chan error)
 		for chainID := byte(0); chainID < common.TotalValidators; chainID++ {
@@ -144,7 +140,7 @@ func (self *Engine) Start() error {
 						Logger.log.Error(err)
 						return
 					}
-					fmt.Println("block height:", block.Height)
+					Logger.log.Infof("block height: %d", block.Height)
 					//Comment validateBlockSanity segment to create block with only 1 node (validator)
 					err = self.validateBlockSanity(block)
 					if err != nil {
@@ -303,12 +299,13 @@ func (self *Engine) createBlock() (*blockchain.Block, error) {
 func (self *Engine) Finalize(finalBlock *blockchain.Block) error {
 	Logger.log.Info("Start finalizing block...")
 	allSigReceived := make(chan struct{})
-
-	defer func() {
-		close(allSigReceived)
-	}()
 	retryTime := 0
 	cancel := make(chan struct{})
+	defer func() {
+		close(cancel)
+		close(allSigReceived)
+		close(cancel)
+	}()
 finalizing:
 	finalBlock.Header.BlockCommitteeSigs = make([]string, common.TotalValidators)
 	finalBlock.Header.Committee = make([]string, common.TotalValidators)
@@ -396,6 +393,7 @@ finalizing:
 		//blocksig wait time exceeded -> get a new commitee list and retry
 		Logger.log.Error(errExceedSigWaitTime)
 		if retryTime == 5 {
+			cancel <- struct{}{}
 			return errExceedBlockRetry
 		}
 		retryTime++
@@ -428,9 +426,6 @@ func (self *Engine) UpdateChain(block *blockchain.Block) {
 		Logger.log.Error(err)
 		return
 	}
-
-	// update candidate list
-	//self.UpdateCndList(block)
 
 	// update tx pool
 	for _, tx := range block.Transactions {
@@ -504,7 +499,7 @@ func (self *Engine) StartSwap() error {
 				Logger.log.Info("Consensus engine stopped swap")
 				return nil
 			}
-		case chainId := <-self.cSwapReqPeriod:
+		case chainId := <-self.cSwapChain:
 			{
 				Logger.log.Infof("Consensus engine swap period %s START", chainId)
 
@@ -514,20 +509,6 @@ func (self *Engine) StartSwap() error {
 				//}
 
 				Logger.log.Infof("Consensus engine swap period %s END", chainId)
-				continue
-			}
-		case chainId := <-self.cSwapReqDie:
-			{
-				Logger.log.Infof("Consensus engine swap die %s START", chainId)
-
-				Logger.log.Infof("Consensus engine swap die %s END", chainId)
-				continue
-			}
-		case chainId := <-self.cSwapReqBad:
-			{
-				Logger.log.Infof("Consensus engine swap bad %s START", chainId)
-
-				Logger.log.Infof("Consensus engine swap bad %s END", chainId)
 				continue
 			}
 		}
