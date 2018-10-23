@@ -75,8 +75,8 @@ func GenerateSpendingKey(seed []byte) []byte {
 func GenerateAddress(spendingKey []byte) []byte {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
-	fmt.Printf("p.X: %v", p.X)
-	fmt.Printf("p.Y: %v", p.Y)
+	fmt.Printf("p.X: %v\n", p.X)
+	fmt.Printf("p.Y: %v\n", p.Y)
 	address := FromPointToByteArray(p)
 	return address
 }
