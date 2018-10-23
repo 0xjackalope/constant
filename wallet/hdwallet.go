@@ -26,7 +26,7 @@ type Key struct {
 // NewMasterKey creates a new master extended Key from a Seed
 func NewMasterKey(seed []byte) (*Key, error) {
 	// Generate Key and chaincode
-	hmac := hmac.New(sha512.New, []byte("Bitcoin Seed"))
+	hmac := hmac.New(sha512.New, seed)
 	_, err := hmac.Write(seed)
 	if err != nil {
 		Logger.log.Error(err)
