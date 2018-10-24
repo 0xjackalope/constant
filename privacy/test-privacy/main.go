@@ -55,4 +55,9 @@ func main() {
 
 	valid := privacy.Verify(signature, hash[:], address)
 	fmt.Println("\nsignature verified:", valid)
+
+	curve1 := privacy.GetCurve()
+	curve2 := privacy.GetCurve()
+	fmt.Printf("Address curve 1: %v\n", &curve1)
+	fmt.Printf("Address curve 2: %v\n", &curve2)
 }

@@ -14,6 +14,18 @@ import (
 // Curve P256
 var Curve = elliptic.P256()
 
+// var curve *elliptic.Curve
+// var once sync.Once
+
+// func GetCurve() *elliptic.Curve {
+// 	once.Do(func() {
+// 		curve = (elliptic.Curve*)&elliptic.P256()
+// 	})
+
+// 	fmt.Printf("Address curve: %v\n", &curve)
+// 	return &curve
+// }
+
 // const (
 // 	P = 0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
 // 	N = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
@@ -58,14 +70,13 @@ type PaymentInfo struct {
 	Amount         uint64
 }
 
-// RandBits generates random bits and return as bytes; zero out redundant bits
-func RandBits(n int) []byte {
-	m := 1 + (n-1)/8
-	b := make([]byte, m)
-	rand.Read(b)
-
-	if n%8 > 0 {
-		b[m-1] &= ((1 << uint(n%8)) - 1)
+// RandBytes generates random bytes
+func RandBytes(n int) []byte {
+	b := make([]byte, n)
+	_, err := rand.Read(b)
+	if err != nil {
+		fmt.Println("error:", err)
+		return nil
 	}
 	return b
 }
@@ -109,7 +120,7 @@ func GenerateReceivingKey(spendingKey []byte) []byte {
 // TransmissionKey : 33 bytes
 func GenerateTransmissionKey(receivingKey []byte) []byte {
 	var p, generator EllipticPoint
-	random := RandBits(256)
+	random := RandBytes(256)
 	//create new generator from base generator
 	generator.X, generator.Y = Curve.ScalarBaseMult(random)
 
