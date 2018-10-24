@@ -25,10 +25,10 @@ func TestPAdd1Div4(t *testing.T) {
 
 }
 
-func TestGetCurve(t *testing.T) {
-	curve1 := GetCurve()
-	curve2 := GetCurve()
-	fmt.Printf("Address curve 1: %v\n", &curve1)
-	fmt.Printf("Address curve 2: %v\n", &curve2)
-	assert.Equal(t, &curve1, &curve2)
-}
+// func TestGetCurve(t *testing.T) {
+// 	curve1 := GetCurve()
+// 	curve2 := GetCurve()
+// 	fmt.Printf("Address curve 1: %v\n", &curve1)
+// 	fmt.Printf("Address curve 2: %v\n", &curve2)
+// 	assert.Equal(t, &curve1, &curve2)
+// }

@@ -6,7 +6,8 @@ type Coin struct {
 	SerialNumber,
 	Value,
 	CoinCommitment,
-	R []byte
+	R,
+	Info []byte
 }
 
 // Commitment represents a commitment that includes 4 generators
@@ -45,7 +46,7 @@ func (com *CommitmentParams) Params() *CommitmentParams {
 
 // InitCommitment initial
 func (com *CommitmentParams) InitCommitment() {
-	// TODO: how to generate generators independently
+	// TODO: (OxKraken) how to generate generators independently
 	com.G0 = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
 	com.G1 = hashGenerator(com.G0)
 	com.G2 = hashGenerator(com.G1)
