@@ -39,6 +39,14 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 			break
 		}
 	}
+	//check Point of degree 2
+	pointToChecked:= new(EllipticPoint)
+	pointToChecked.X, pointToChecked.Y	= Curve.Double(res.X, res.Y)
+
+	if (pointToChecked.X == nil || pointToChecked.Y == nil) {
+		fmt.Errorf("Point at infinity");
+		return *new(EllipticPoint);
+	}
 	return *res
 }
 

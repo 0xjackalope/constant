@@ -55,7 +55,7 @@ func main() {
 		fmt.Println("\nsignature verified:", valid)
 	*/
 	a := "aaaaaaaaaaaaaaaaa"
-	fmt.Println(a)
+
 
 	//var b privacy.Commitment
 	var xx privacy.CommitmentParams
