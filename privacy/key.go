@@ -101,7 +101,6 @@ func GenerateAddress(spendingKey []byte) []byte {
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
 	fmt.Printf("p.X: %v\n", p.X)
 	fmt.Printf("p.Y: %v\n", p.Y)
-	// address := FromPointToByteArray(p)
 	address := CompressKey(p)
 
 	return address

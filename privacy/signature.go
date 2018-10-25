@@ -5,6 +5,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+
+	"github.com/ninjadotorg/cash/common"
 )
 
 // Sign create signature for message with secret key
@@ -55,4 +57,18 @@ func FromByteArrayToSig(sig []byte) (r, s *big.Int) {
 	r = new(big.Int).SetBytes(sig[0:32])
 	s = new(big.Int).SetBytes(sig[32:64])
 	return
+}
+
+// GenerateKey generates a one-time public and private key pair for signing transaction privacy.
+func GenerateKey() (privKey, pubKey []byte) {
+	tmp := new(big.Int)
+	privKey = RandBytes(32)
+	for tmp.SetBytes(privKey).Cmp(Curve.Params().N) == 1 {
+		privKey = common.HashB(privKey)
+	}
+	var pubKeyPoint EllipticPoint
+	pubKeyPoint.X, pubKeyPoint.Y = Curve.ScalarBaseMult(privKey)
+	pubKey = CompressKey(pubKeyPoint)
+
+	return privKey, pubKey
 }
