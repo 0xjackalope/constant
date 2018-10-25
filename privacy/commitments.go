@@ -42,6 +42,7 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 	return *res
 }
 
+//ComputeYCoord calculate Y coord from X
 func ComputeYCoord(x *big.Int) *big.Int {
 	Q := Curve.Params().P
 	temp := new(big.Int)

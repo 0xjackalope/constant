@@ -29,14 +29,17 @@ type Tx struct {
 	LockTime int64  `json:"LockTime"`
 	Fee      uint64 `json:"Fee"` // Fee applies to first js desc
 
-	Descs    []*JoinSplitDesc `json:"Descs"`
-	JSPubKey []byte           `json:"JSPubKey,omitempty"` // 64 bytes
-	JSSig    []byte           `json:"JSSig,omitempty"`    // 64 bytes
+	// Descs    []*JoinSplitDesc `json:"Descs"`
+	SigPubKey []byte `json:"JSPubKey,omitempty"` // 64 bytes
+	Signature []byte `json:"JSSig,omitempty"`    // 64 bytes
+	rt        []byte
+	Inputs    []SpendingCoinSN
+	Outputs   []Commitment
 
-	AddressLastByte byte `json:"AddressLastByte"`
+	// AddressLastByte byte `json:"AddressLastByte"`
 
-	txId       *common.Hash
-	sigPrivKey *client.PrivateKey
+	txId *common.Hash
+	// sigPrivKey *client.PrivateKey
 }
 
 func (tx *Tx) SetTxId(txId *common.Hash) {
@@ -153,10 +156,10 @@ func (tx *Tx) GetSenderAddrLastByte() byte {
 func CreateTx(
 	senderKey *privacy.SpendingKey,
 	paymentInfo []*privacy.PaymentInfo,
-	rts map[byte]*common.Hash,
-	usableTx map[byte][]*Tx,
-	nullifiers map[byte]([][]byte),
-	commitments map[byte]([][]byte),
+	rt *common.Hash,
+	unspentCoins map[byte][]*Coin,
+	spentSNs map[byte]([][]byte),
+	// commitments map[byte]([][]byte),
 	fee uint64,
 	senderChainID byte,
 ) (*Tx, error) {

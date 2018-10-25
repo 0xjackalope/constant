@@ -7,7 +7,8 @@ type Coin struct {
 	SerialNumber,
 	Value,
 	CoinCommitment,
-	R []byte
+	R,
+	Info []byte
 }
 
 // Commit commits a coin
