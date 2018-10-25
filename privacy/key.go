@@ -270,7 +270,7 @@ func PAdd1Div4(p *big.Int) (res *big.Int) {
 	res = new(big.Int)
 	res.Add(p, new(big.Int).SetInt64(1))
 	res.Div(res, new(big.Int).SetInt64(4))
-	fmt.Printf("res: %v\n", res)
+	//fmt.Printf("res: %v\n", res)
 	return
 }
 
