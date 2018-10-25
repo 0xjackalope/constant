@@ -22,13 +22,15 @@ import (
 
 type Engine struct {
 	sync.Mutex
-	started       bool
-	sealerStarted bool
+	started        bool
+	sealerStarted  bool
+	committeeMutex sync.Mutex
 
 	// channel
 	cQuit       chan struct{}
 	cQuitSealer chan struct{}
 	cBlockSig   chan blockSig
+	cSwapSig    chan swapSig
 	cQuitSwap   chan struct{}
 	cSwapChain  chan byte
 
@@ -81,10 +83,19 @@ type blockSig struct {
 	ValidatorSig string
 }
 
+type swapSig struct {
+	RequesterPbk    string
+	ChainID         byte
+	SealerPublicKey string
+	Validator       string
+	ValidatorSig    string
+}
+
 //Init apply configuration to consensus engine
 func (self Engine) Init(cfg *EngineConfig) (*Engine, error) {
 	return &Engine{
-		config: *cfg,
+		committeeMutex: sync.Mutex{},
+		config:         *cfg,
 	}, nil
 }
 
@@ -214,12 +225,17 @@ func (self *Engine) StartSealer(sealerKeySet cashec.KeySet) {
 		Logger.log.Error("Sealer already started")
 		return
 	}
+
 	self.config.ValidatorKeySet = sealerKeySet
 
 	self.cQuitSealer = make(chan struct{})
 	self.cBlockSig = make(chan blockSig)
 	self.sealerStarted = true
 	Logger.log.Info("Starting sealer with public key address(base58check.encode): " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)))
+
+	// TODO test SWAP
+	//go self.StartSwap()
+	//return
 
 	go func() {
 		for {
@@ -490,22 +506,116 @@ func (self *Engine) IsExistedNodeAddr(nodeAddr string) bool {
 }
 
 func (self *Engine) StartSwap() error {
+	Logger.log.Info("Consensus engine START SWAP")
+
+	self.cSwapSig = make(chan swapSig)
 	self.cQuitSwap = make(chan struct{})
+	self.cSwapChain = make(chan byte)
+
+	go func() {
+		for {
+			select {
+			case <-time.After(10 * time.Second):
+				Logger.log.Info("Consensus engine SWAP TIMER")
+				self.cSwapChain <- byte(1)
+				continue
+			}
+		}
+	}()
+
 	for {
 		select {
 		case <-self.cQuitSwap:
 			{
-				Logger.log.Info("Consensus engine stopped swap")
+				Logger.log.Info("Consensus engine STOP SWAP")
 				return nil
 			}
 		case chainId := <-self.cSwapChain:
 			{
-				Logger.log.Infof("Consensus engine swap period %s START", chainId)
+				Logger.log.Infof("Consensus engine swap %d START", chainId)
 
-				//cndList := self.config.BlockChain.GetCndList()
-				//for _, cndNode := range cndList {
-				//	self.config.ConnManager.Connect()
-				//}
+				allSigReceived := make(chan struct{})
+				retryTime := 0
+				committee := make([]string, common.TotalValidators)
+				copy(committee, self.GetCommittee())
+
+				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+				// TODO get first public key from candidate list
+				sealerPbk := "abc"
+
+				signatureMap := make(map[string]string)
+
+			BeginSwap:
+
+			// Collect signatures of other validators
+				cancel := make(chan struct{})
+				go func(requesterPbk string, chainId byte, sealerPbk string) {
+					for {
+						select {
+						case <-cancel:
+							return
+						case swapSig := <-self.cSwapSig:
+							_ = swapSig
+							if common.IndexOfStr(swapSig.Validator, committee) >= 0 && swapSig.RequesterPbk == requesterPbk {
+								signatureMap[swapSig.Validator] = swapSig.ValidatorSig
+								if len(signatureMap) >= (common.TotalValidators / 2) {
+									close(allSigReceived)
+									return
+								}
+							}
+						case <-time.After(common.MaxBlockSigWaitTime * time.Second * 5):
+							return
+						}
+					}
+				}(requesterPbk, chainId, sealerPbk)
+
+				// Request signatures from other validators
+				go func(requesterPbk string, chainId byte, sealerPbk string) {
+					reqSigMsg, _ := wire.MakeEmptyMessage(wire.CmdRequestSwap)
+					reqSigMsg.(*wire.MessageRequestSwap).RequesterPbk = requesterPbk
+					reqSigMsg.(*wire.MessageRequestSwap).ChainID = chainId
+					reqSigMsg.(*wire.MessageRequestSwap).SealerPbk = sealerPbk
+
+					for idx := 0; idx < common.TotalValidators; idx++ {
+						if committee[idx] != requesterPbk {
+							go func(validator string) {
+								peerIDs := self.config.Server.GetPeerIDsFromPublicKey(validator)
+								if len(peerIDs) > 0 {
+									for _, peerID := range peerIDs {
+										Logger.log.Infof("Request swap to %s %s", peerID, validator)
+										self.config.Server.PushMessageToPeer(reqSigMsg, peerID)
+									}
+								} else {
+									Logger.log.Error("Validator's peer not found!", validator)
+								}
+							}(committee[idx])
+						}
+					}
+				}(requesterPbk, chainId, sealerPbk)
+
+				// Wait for signatures of other validators
+				select {
+				case <-allSigReceived:
+					Logger.log.Info("Validator signatures: ", signatureMap)
+				case <-time.After(common.MaxBlockSigWaitTime * time.Second):
+					//blocksig wait time exceeded -> get a new commitee list and retry
+					//Logger.log.Error(errExceedSigWaitTime)
+
+					close(cancel)
+					if retryTime == 5 {
+						continue
+					}
+					retryTime++
+					Logger.log.Infof("Start finalizing swap... %d time", retryTime)
+					goto BeginSwap
+				}
+
+				Logger.log.Infof("SWAP DONE")
+
+				committeeV := make([]string, common.TotalValidators)
+				copy(committeeV, self.GetCommittee())
+
+				self.updateCommittee(sealerPbk)
 				// check node is connected
 
 				// send message for request sign swap
@@ -516,11 +626,28 @@ func (self *Engine) StartSwap() error {
 
 				// broadcast message for update new committee list
 
-				Logger.log.Infof("Consensus engine swap period %s END", chainId)
+				Logger.log.Infof("Consensus engine swap %d END", chainId)
 				continue
 			}
 		}
 	}
+	return nil
+}
+
+func (self *Engine) updateCommittee(sealerPbk string) error {
+	self.committeeMutex.Lock()
+	defer self.committeeMutex.Unlock()
+
+	committee := make([]string, common.TotalValidators)
+	copy(committee, self.GetCommittee())
+
+	if common.IndexOfStr(sealerPbk, committee) >= 0 {
+		return nil
+	}
+
+	//TODO update committee list
+
+	//TODO remove sealerPbk from candidate list
 
 	return nil
 }

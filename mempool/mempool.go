@@ -213,10 +213,10 @@ func (tp *TxPool) maybeAcceptTransaction(tx transaction.Transaction) (*common.Ha
 		return nil, nil, err
 	}
 
-	// A standalone transaction must not be a coinbase transaction.
-	if blockchain.IsCoinBaseTx(tx) {
+	// A standalone transaction must not be a salary transaction.
+	if blockchain.IsSalaryTx(tx) {
 		err := MempoolTxError{}
-		err.Init(RejectCoinbaseTx, errors.New(fmt.Sprintf("%+v is coinbase tx", txHash.String())))
+		err.Init(RejectSalaryTx, errors.New(fmt.Sprintf("%+v is salary tx", txHash.String())))
 		return nil, nil, err
 	}
 
@@ -346,8 +346,8 @@ func (tp *TxPool) HaveTransaction(hash *common.Hash) bool {
 CheckTransactionFee - check fee of tx
 */
 func (tp *TxPool) CheckTransactionFee(tx transaction.Transaction) (uint64, error) {
-	// Coinbase transactions have no inputs.
-	if blockchain.IsCoinBaseTx(tx) {
+	// Salary transactions have no inputs.
+	if blockchain.IsSalaryTx(tx) {
 		return 0, nil
 	}
 

@@ -38,21 +38,22 @@ var RpcHandler = map[string]commandHandler{
 	// block
 	GetBestBlock:      RpcServer.handleGetBestBlock,
 	GetBestBlockHash:  RpcServer.handleGetBestBlockHash,
-	GetBlock:          RpcServer.handleGetBlock,
+	RetrieveBlock:     RpcServer.handleRetrieveBlock,
+	GetBlocks:         RpcServer.handleGetBlocks,
 	GetBlockChainInfo: RpcServer.handleGetBlockChainInfo,
 	GetBlockCount:     RpcServer.handleGetBlockCount,
 	GetBlockHash:      RpcServer.handleGetBlockHash,
 	/*"getblocktemplate":              RpcServer.handleGetBlockTemplate,*/
 
 	// transaction
-	ListTransactions:              RpcServer.handleListTransactions,
-	CreateTransaction:             RpcServer.handleCreateTransaction,
-	SendTransaction:               RpcServer.handleSendTransaction,
-	SendMany:                      RpcServer.handleSendMany,
-	GetNumberOfCoinsAndBonds:      RpcServer.handleGetNumberOfCoinsAndBonds,
-	CreateActionParamsTransaction: RpcServer.handleCreateActionParamsTransaction,
-	SendRegistration:              RpcServer.handleSendRegistration,
-	GetMempoolInfo:                RpcServer.handleGetMempoolInfo,
+	ListTransactions:                  RpcServer.handleListTransactions,
+	CreateTransaction:                 RpcServer.handleCreateTransaction,
+	SendTransaction:                   RpcServer.handleSendTransaction,
+	SendMany:                          RpcServer.handleSendMany,
+	GetNumberOfCoinsAndBonds:          RpcServer.handleGetNumberOfCoinsAndBonds,
+	CreateActionParamsTransaction:     RpcServer.handleCreateActionParamsTransaction,
+	SendRegistrationCandidateCommitee: RpcServer.handleSendRegistrationCandidateCommitee,
+	GetMempoolInfo:                    RpcServer.handleGetMempoolInfo,
 
 	GetCndList: RpcServer.handleGetCndList,
 
@@ -203,7 +204,7 @@ func (self RpcServer) handleGetBestBlockHash(params interface{}, closeChan <-cha
 /*
 getblockcount RPC return information fo blockchain node
 */
-func (self RpcServer) handleGetBlock(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+func (self RpcServer) handleRetrieveBlock(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	paramsT, ok := params.([]interface{})
 	if ok && len(paramsT) >= 2 {
 		hashString := paramsT[0].(string)
@@ -251,6 +252,7 @@ func (self RpcServer) handleGetBlock(params interface{}, closeChan <-chan struct
 			result.PreviousBlockHash = block.Header.PrevBlockHash.String()
 			result.NextBlockHash = nextHashString
 			result.TxHashes = []string{}
+			result.BlockProducerSign = block.ChainLeaderSig
 			for _, tx := range block.Transactions {
 				result.TxHashes = append(result.TxHashes, tx.Hash().String())
 			}
@@ -308,6 +310,37 @@ func (self RpcServer) handleGetBlock(params interface{}, closeChan <-chan struct
 	return nil, nil
 }
 
+// handleGetBlocks - get n top blocks from chain ID
+func (self RpcServer) handleGetBlocks(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	result := make([]jsonresult.GetBlockResult, 0)
+	arrayParams := common.InterfaceSlice(params)
+	numBlock := int(arrayParams[0].(float64))
+	chainID := int(arrayParams[1].(float64))
+	bestBlock := self.config.BlockChain.BestState[chainID].BestBlock
+	blockResult := jsonresult.GetBlockResult{}
+	blockResult.Init(bestBlock)
+	result = append(result, blockResult)
+	for numBlock > 0 {
+		numBlock--
+		emptyHash := common.Hash{}
+		if blockResult.PreviousBlockHash == emptyHash.String() {
+			break
+		}
+		hash, errH := common.Hash{}.NewHashFromStr(blockResult.PreviousBlockHash)
+		if errH != nil {
+			return nil, errH
+		}
+		block, errD := self.config.BlockChain.GetBlockByBlockHash(hash)
+		if errD != nil {
+			return nil, errD
+		}
+		blockResult := jsonresult.GetBlockResult{}
+		blockResult.Init(block)
+		result = append(result, blockResult)
+	}
+	return result, nil
+}
+
 /*
 getblockchaininfo RPC return information fo blockchain node
 */
@@ -316,11 +349,15 @@ func (self RpcServer) handleGetBlockChainInfo(params interface{}, closeChan <-ch
 		ChainName:  self.config.ChainParams.Name,
 		BestBlocks: make(map[string]jsonresult.GetBestBlockItem),
 	}
-	for chainID, best := range self.config.BlockChain.BestState {
+	for chainID, bestState := range self.config.BlockChain.BestState {
 		result.BestBlocks[strconv.Itoa(chainID)] = jsonresult.GetBestBlockItem{
-			Height:   best.BestBlock.Height,
-			Hash:     best.BestBlockHash.String(),
-			TotalTxs: best.TotalTxns,
+			Height:           bestState.BestBlock.Height,
+			Hash:             bestState.BestBlockHash.String(),
+			TotalTxs:         bestState.TotalTxns,
+			SalaryFund:       bestState.BestBlock.Header.SalaryFund,
+			BasicSalary:      bestState.BestBlock.Header.GovernanceParams.BasicSalary,
+			BlockProducer:    bestState.BestBlock.ChainLeader,
+			BlockProducerSig: bestState.BestBlock.ChainLeaderSig,
 		}
 	}
 	return result, nil
@@ -495,7 +532,7 @@ func (self RpcServer) handleListUnspent(params interface{}, closeChan <-chan str
 	return result, nil
 }
 
-func (self RpcServer) handleCreateRegistration(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+func (self RpcServer) handleCreateRegistrationCandidateCommitee(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	Logger.log.Info(params)
 
 	// all params
@@ -619,7 +656,7 @@ func (self RpcServer) handleCreateRegistration(params interface{}, closeChan <-c
 	return nil, err
 }
 
-func (self RpcServer) handleSendRawRegistration(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+func (self RpcServer) handleSendRawRegistrationCandidateCommitee(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	Logger.log.Info(params)
 	arrayParams := common.InterfaceSlice(params)
 	hexRawTx := arrayParams[0].(string)
@@ -649,21 +686,21 @@ func (self RpcServer) handleSendRawRegistration(params interface{}, closeChan <-
 		return nil, err
 	}
 
-	txMsg.(*wire.MessageRegisteration).Transaction = &tx
+	txMsg.(*wire.MessageRegistration).Transaction = &tx
 	self.config.Server.PushMessageToAll(txMsg)
 
 	return tx.Hash(), nil
 }
 
-// handleSendRegistration handle sendregistration commitee candidate command.
-func (self RpcServer) handleSendRegistration(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
-	hexStrOfTx, err := self.handleCreateRegistration(params, closeChan)
+// handleSendRegistrationCandidateCommitee handle sendregistration commitee candidate command.
+func (self RpcServer) handleSendRegistrationCandidateCommitee(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+	hexStrOfTx, err := self.handleCreateRegistrationCandidateCommitee(params, closeChan)
 	if err != nil {
 		return nil, err
 	}
 	newParam := make([]interface{}, 0)
 	newParam = append(newParam, hexStrOfTx)
-	txId, err := self.handleSendRawRegistration(newParam, closeChan)
+	txId, err := self.handleSendRawRegistrationCandidateCommitee(newParam, closeChan)
 	return txId, err
 }
 
@@ -1134,7 +1171,7 @@ func (self RpcServer) handleGetBalance(params interface{}, closeChan <-chan stru
 }
 
 /*
-handleGetReceivedByAccount -  RPC returns the total amount received by addresses in a particular account from transactions with the specified number of confirmations. It does not count coinbase transactions.
+handleGetReceivedByAccount -  RPC returns the total amount received by addresses in a particular account from transactions with the specified number of confirmations. It does not count salary transactions.
 */
 func (self RpcServer) handleGetReceivedByAccount(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	balance := uint64(0)
@@ -1172,7 +1209,7 @@ func (self RpcServer) handleGetReceivedByAccount(params interface{}, closeChan <
 			}
 			for _, txs := range txsMap {
 				for _, tx := range txs {
-					if blockchain.IsCoinBaseTx(&tx) {
+					if blockchain.IsSalaryTx(&tx) {
 						continue
 					}
 					for _, desc := range tx.Descs {

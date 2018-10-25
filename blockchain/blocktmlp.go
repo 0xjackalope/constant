@@ -89,7 +89,7 @@ concludeBlock:
 	if err != nil {
 		return nil, err
 	}
-	// the 1st tx will be coinbaseTx
+	// the 1st tx will be salaryTx
 	txsToAdd = append([]transaction.Transaction{salaryTx}, txsToAdd...)
 
 	merkleRoots := Merkle{}.BuildMerkleTreeStore(txsToAdd)
@@ -111,7 +111,7 @@ concludeBlock:
 	block := Block{}
 	currentSalaryFund := blockgen.chain.BestState[chainID].BestBlock.Header.SalaryFund
 	block.Header = BlockHeader{
-		Version:               1,
+		Version:               BlockVersion,
 		PrevBlockHash:         *prevBlockHash,
 		MerkleRoot:            *merkleRoot,
 		MerkleRootCommitments: common.Hash{},
@@ -242,7 +242,7 @@ func createSalaryTx(
 	inputs[1] = transaction.CreateRandomJSInput(inputs[0].Key)
 	dummyAddress := client.GenPaymentAddress(*inputs[0].Key)
 
-	// Create new notes: first one is coinbase UTXO, second one has 0 value
+	// Create new notes: first one is salary UTXO, second one has 0 value
 	var temp []byte
 	copy(temp, receiverAddr.Address[:])
 	outNote := &client.Note{Value: salary, Apk: temp}
@@ -257,14 +257,14 @@ func createSalaryTx(
 	outputs[1].OutputNote = placeHolderOutputNote
 
 	// Generate proof and sign tx
-	tx, err := transaction.CreateEmptyTx()
+	tx, err := transaction.CreateEmptyTx(common.TxSalaryType)
 	if err != nil {
 		return nil, err
 	}
 	tx.AddressLastByte = dummyAddress.Apk[len(dummyAddress.Apk)-1]
 	rtMap := map[byte][]byte{chainID: rt}
 	inputMap := map[byte][]*client.JSInput{chainID: inputs}
-	err = tx.BuildNewJSDesc(inputMap, outputs, rtMap, salary, 0, false)
+	err = tx.BuildNewJSDesc(inputMap, outputs, rtMap, salary, 0, true)
 	if err != nil {
 		return nil, err
 	}
