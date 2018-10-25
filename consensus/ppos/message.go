@@ -150,7 +150,7 @@ func (self *Engine) sendBlockMsg(block *blockchain.Block) {
 func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	Logger.log.Info("Received a MessageRequestSwap")
 
-	senderID := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+	senderID := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00))
 
 	rawBytes := []byte{}
 	rawBytes = append(rawBytes, []byte(msg.RequesterPbk)...)
@@ -165,7 +165,7 @@ func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	messageSigMsg := wire.MessageSignSwap{
 		SenderID:     senderID,
 		RequesterPbk: msg.RequesterPbk,
-		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00)),
+		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)),
 		ValidatorSig: sig,
 	}
 	peerID, err := peer2.IDB58Decode(msg.SenderID)

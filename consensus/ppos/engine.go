@@ -539,7 +539,7 @@ func (self *Engine) StartSwap() error {
 				committee := make([]string, common.TotalValidators)
 				copy(committee, self.GetCommittee())
 
-				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00))
 				// TODO get first public key from candidate list
 				sealerPbk := "abc"
 
