@@ -1,7 +1,6 @@
 package privacy
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/minio/blake2b-simd"
@@ -48,7 +47,7 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 	pointToChecked.X, pointToChecked.Y = Curve.Double(res.X, res.Y)
 
 	if pointToChecked.X == nil || pointToChecked.Y == nil {
-		fmt.Errorf("Point at infinity")
+		//fmt.Errorf("Point at infinity")
 		return *new(EllipticPoint)
 	}
 	return *res
@@ -96,7 +95,7 @@ func (com *CommitmentParams) Params() *CommitmentParams {
 // InitCommitment initial
 func (com *CommitmentParams) InitCommitment() {
 	// TODO: how to generate generators independently
-	fmt.Println(Curve.Params().Gx, "___", Curve.Params().Gy)
+
 	com.G0 = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
 	com.G1 = hashGenerator(com.G0)
 	com.G2 = hashGenerator(com.G1)
@@ -108,26 +107,6 @@ func (com *CommitmentParams) Commit(prdnum []byte, address PublicKey, value []by
 	var res []byte
 	// TODO: using Pedersen commitment
 	//var commitRPoint EllipticPoint
-	/*fmt.Print(Curve.IsOnCurve(com.G0.X, com.G0.Y))
-	fmt.Print("__")
-	fmt.Print(com.G0.X)
-	fmt.Print("__")
-	fmt.Println(com.G0.Y)
-	fmt.Print(Curve.IsOnCurve(com.G1.X, com.G1.Y))
-	fmt.Print("__")
-	fmt.Print(com.G1.X)
-	fmt.Print("__")
-	fmt.Println(com.G1.Y)
-	fmt.Print(Curve.IsOnCurve(com.G2.X, com.G2.Y))
-	fmt.Print("__")
-	fmt.Print(com.G2.X)
-	fmt.Print("__")
-	fmt.Println(com.G2.Y)
-	fmt.Print(Curve.IsOnCurve(com.H.X, com.H.Y))
-	fmt.Print("__")
-	fmt.Print(com.H.X)
-	fmt.Print("__")
-	fmt.Println(com.H.Y) //*/
 
 	commx, commy := Curve.ScalarMult(com.H.X, com.H.Y, prdnum)
 	commxtemp, commytemp := Curve.ScalarMult(com.G0.X, com.G0.Y, address)
@@ -144,36 +123,3 @@ func (com *CommitmentParams) Commit(prdnum []byte, address PublicKey, value []by
 	res = CompressKey(resPoint)
 	return res
 }
-
-/*
-
-func HashGenerator(g EllipticPoint) EllipticPoint {
-	// TODO: res.X = hash(g.X), res.Y = sqrt(res.X^3 - 3X + B)
-	res := new (EllipticPoint)
-	res.X = big.NewInt(rand.Int63());
-	res.Y = big.NewInt(rand.Int63());
-	i := 0;
-	for !Curve.IsOnCurve(res.X, res.Y) {
-		if i==0 {
-			*res.X = *g.X;
-			*res.Y = *g.Y;
-		}
-		var h = sha256.New()
-		h.Write(res.X.Bytes())
-		res.X = new(big.Int).SetBytes(h.Sum(nil));
-		res.X.Mod(res.X, Curve.Params().P);
-		temp := ComputeYCoord(res.X);
-		if temp != nil {
-			res.Y = temp;
-		}
-		//fmt.Println(res.X);
-		//fmt.Println("Loop:",i);
-		//fmt.Println("X = ",res.X);
-		//fmt.Println("Y = ",res.Y);
-		i++;
-	}
-
-	return *res
-}
-
-*/

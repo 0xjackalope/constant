@@ -1,15 +1,14 @@
 package privacy
 
-type SerialNumber []byte //32 bytes
+type SerialNumber []byte   //32 bytes
 type CoinCommitment []byte //32 bytes
-
 
 // Coin represents a coin
 type Coin struct {
-	Address			PublicKey
-	SerialNumber 	SerialNumber
-	CoinCommitment 	CoinCommitment
-	Value, R, Info 	[]byte
+	Address        PublicKey
+	SerialNumber   SerialNumber
+	CoinCommitment CoinCommitment
+	Value, R, Info []byte
 }
 
 // Commit commits a coin
@@ -18,15 +17,3 @@ func (coin *Coin) Commit() {
 	Cm.InitCommitment()
 	coin.CoinCommitment = Cm.Commit(coin.R, coin.Address, coin.Value, coin.SerialNumber)
 }
-
-// type Cryptosystem struct{
-// 	privateKey
-// 	publicKey
-
-// }
-
-// func genKey()
-
-// func(self * Cryptosystem) Encrypt(){
-
-// }
