@@ -33,7 +33,7 @@ func (self *Engine) ValidateCommitteeSigs(blockHash []byte, committee []string, 
 			continue
 		}
 		k := cashec.KeySet{}
-		k.PublicKey.Address = decPubkey
+		k.PaymentAddress.PubKey = decPubkey
 		decSig, _, err := base58.Base58Check{}.Decode(sigs[idx])
 		if err != nil {
 			Logger.log.Error(err)

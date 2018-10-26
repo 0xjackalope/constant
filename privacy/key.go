@@ -22,7 +22,7 @@ var Curve = elliptic.P256()
 // 		curve = (elliptic.Curve*)&elliptic.P256()
 // 	})
 
-// 	fmt.Printf("Address curve: %v\n", &curve)
+// 	fmt.Printf("PubKey curve: %v\n", &curve)
 // 	return &curve
 // }
 
@@ -55,13 +55,13 @@ type EllipticPoint struct {
 
 // ViewingKey represents an key that be used to view transactions
 type ViewingKey struct {
-	Address      []byte // 33 bytes, use to receive coin
+	PubKey       []byte // 33 bytes, use to receive coin
 	ReceivingKey []byte // 32 bytes, use to decrypt pointByte
 }
 
 // PaymentAddress represents an payment address of receiver
 type PaymentAddress struct {
-	Address         []byte // 33 bytes, use to receive coin
+	PubKey          []byte // 33 bytes, use to receive coin
 	TransmissionKey []byte // 33 bytes, use to encrypt pointByte
 }
 
@@ -95,7 +95,7 @@ func GenerateSpendingKey(seed []byte) []byte {
 }
 
 // GenerateAddress computes an address corresponding with spendingKey
-// Address : 33 bytes
+// PubKey : 33 bytes
 func GenerateAddress(spendingKey []byte) []byte {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
@@ -133,7 +133,7 @@ func GenerateTransmissionKey(receivingKey []byte) []byte {
 // GenerateViewingKey generates a viewingKey corressponding with spendingKey
 func GenerateViewingKey(spendingKey []byte) ViewingKey {
 	var viewingKey ViewingKey
-	viewingKey.Address = GenerateAddress(spendingKey)
+	viewingKey.PubKey = GenerateAddress(spendingKey)
 	viewingKey.ReceivingKey = GenerateReceivingKey(spendingKey)
 	return viewingKey
 }
@@ -141,7 +141,7 @@ func GenerateViewingKey(spendingKey []byte) ViewingKey {
 // GeneratePaymentAddress generates a payment address corressponding with spendingKey
 func GeneratePaymentAddress(spendingKey []byte) PaymentAddress {
 	var paymentAddress PaymentAddress
-	paymentAddress.Address = GenerateAddress(spendingKey)
+	paymentAddress.PubKey = GenerateAddress(spendingKey)
 	paymentAddress.TransmissionKey = GenerateTransmissionKey(GenerateReceivingKey(spendingKey))
 	return paymentAddress
 }

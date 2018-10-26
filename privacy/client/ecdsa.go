@@ -44,7 +44,7 @@ const (
 	aesIV = "IV for ECDSA CTR"
 )
 
-// PublicKey represents an ECDSA public key.
+// PaymentAddress represents an ECDSA public key.
 type PublicKey struct {
 	// elliptic.Curve
 	X, Y *big.Int

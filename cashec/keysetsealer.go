@@ -24,7 +24,7 @@ func (self *KeySetSealer) Import(privateKey string) (*KeySetSealer, error) {
 	if err != nil {
 		return self, err
 	}
-	self.SpublicKey = key.Public().(ed25519.PublicKey)
+	self.SpublicKey = key.Public().(ed25519.PaymentAddress)
 	self.SprivateKey = key
 	return self, nil
 }
@@ -55,14 +55,14 @@ func (self *KeySetSealer) DecodeToKeySet(keystring string) (*KeySetSealer, error
 
 func (self *KeySetSealer) GetPaymentAddress() (privacy.PaymentAddress, error) {
 	var paymentAddr privacy.PaymentAddress
-	paymentAddr.Address = self.SpendingAddress
+	paymentAddr.PubKey = self.SpendingAddress
 	paymentAddr.TransmissionKey = self.TransmissionKey
 	return paymentAddr, nil
 }
 
 func (self *KeySetSealer) GetViewingKey() (privacy.ViewingKey, error) {
 	var viewingKey privacy.ViewingKey
-	viewingKey.Address = self.SpendingAddress
+	viewingKey.PubKey = self.SpendingAddress
 	viewingKey.ReceivingKey = self.ReceivingKey
 	return viewingKey, nil
 }*/

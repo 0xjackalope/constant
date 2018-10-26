@@ -9,9 +9,9 @@ import (
 )
 
 type KeySet struct {
-	PrivateKey  privacy.SpendingKey
-	PublicKey   privacy.PaymentAddress
-	ReadonlyKey privacy.ViewingKey
+	PrivateKey     privacy.SpendingKey    // use to spend coin
+	PaymentAddress privacy.PaymentAddress // use to receive coin
+	ReadonlyKey    privacy.ViewingKey     // use to view tx
 }
 
 /*
@@ -19,7 +19,7 @@ GenerateKey - generate key set from seed byte[]
 */
 func (self *KeySet) GenerateKey(seed []byte) *KeySet {
 	self.PrivateKey = privacy.GenerateSpendingKey(seed)
-	self.PublicKey = privacy.GeneratePaymentAddress(self.PrivateKey)
+	self.PaymentAddress = privacy.GeneratePaymentAddress(self.PrivateKey)
 	self.ReadonlyKey = privacy.GenerateViewingKey(self.PrivateKey)
 	return self
 }
@@ -29,7 +29,7 @@ ImportFromPrivateKeyByte - from private-key byte[], regenerate pub-key and reado
 */
 func (self *KeySet) ImportFromPrivateKeyByte(privateKey []byte) {
 	copy(self.PrivateKey[:], privateKey)
-	self.PublicKey = privacy.GeneratePaymentAddress(self.PrivateKey)
+	self.PaymentAddress = privacy.GeneratePaymentAddress(self.PrivateKey)
 	self.ReadonlyKey = privacy.GenerateViewingKey(self.PrivateKey)
 }
 
@@ -38,7 +38,7 @@ ImportFromPrivateKeyByte - from private-key data, regenerate pub-key and readonl
 */
 func (self *KeySet) ImportFromPrivateKey(privateKey *privacy.SpendingKey) {
 	self.PrivateKey = *privateKey
-	self.PublicKey = privacy.GeneratePaymentAddress(self.PrivateKey)
+	self.PaymentAddress = privacy.GeneratePaymentAddress(self.PrivateKey)
 	self.ReadonlyKey = privacy.GenerateViewingKey(self.PrivateKey)
 }
 
@@ -48,8 +48,8 @@ Generate Sealer keyset from privacy key set
 /*func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
 	var sealerKeySet KeySetSealer
 	sealerKeySet.GenerateKey(self.PrivateKey[:])
-	sealerKeySet.SpendingAddress = self.PublicKey.Address
-	sealerKeySet.TransmissionKey = self.PublicKey.TransmissionKey
+	sealerKeySet.SpendingAddress = self.PaymentAddress.PubKey
+	sealerKeySet.TransmissionKey = self.PaymentAddress.TransmissionKey
 	sealerKeySet.ReceivingKey = self.ReadonlyKey.ReceivingKey
 	return &sealerKeySet, nil
 }*/
@@ -57,7 +57,7 @@ Generate Sealer keyset from privacy key set
 func (self *KeySet) Verify(data, signature []byte) (bool, error) {
 	isValid := false
 	hash := common.HashB(data)
-	isValid = privacy.Verify(signature, hash[:], self.PublicKey.Address)
+	isValid = privacy.Verify(signature, hash[:], self.PaymentAddress.PubKey)
 	return isValid, nil
 }
 
@@ -81,7 +81,7 @@ func (self *KeySet) DecodeToKeySet(keystring string) (*KeySet, error) {
 }
 
 func (self *KeySet) GetPaymentAddress() (privacy.PaymentAddress, error) {
-	return self.PublicKey, nil
+	return self.PaymentAddress, nil
 }
 
 func (self *KeySet) GetViewingKey() (privacy.ViewingKey, error) {
@@ -95,7 +95,7 @@ func ValidateDataB58(pubkey string, sig string, data []byte) error {
 	}
 
 	validatorKp := KeySet{}
-	validatorKp.PublicKey.Address = decPubkey
+	validatorKp.PaymentAddress.PubKey = decPubkey
 	decSig, _, err := base58.Base58Check{}.Decode(sig)
 	if err != nil {
 		return errors.New("can't decode signature: " + err.Error())

@@ -231,7 +231,7 @@ func (self *Engine) StartSealer(sealerKeySet cashec.KeySet) {
 	self.cQuitSealer = make(chan struct{})
 	self.cBlockSig = make(chan blockSig)
 	self.sealerStarted = true
-	Logger.log.Info("Starting sealer with public key address(base58check.encode): " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00)))
+	Logger.log.Info("Starting sealer with public key address(base58check.encode): " + base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PubKey, byte(0x00)))
 
 	// TODO test SWAP
 	//go self.StartSwap()
@@ -301,7 +301,7 @@ func (self *Engine) createBlock() (*blockchain.Block, error) {
 	newblock.Block.Header.ChainsHeight = make([]int, common.TotalValidators)
 	copy(newblock.Block.Header.ChainsHeight, self.validatedChainsHeight.Heights)
 	newblock.Block.Header.ChainID = myChainID
-	newblock.Block.ChainLeader = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00))
+	newblock.Block.ChainLeader = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PubKey, byte(0x00))
 
 	// hash candidate list and set to block header
 	candidates := self.GetCndList(newblock.Block)
@@ -539,7 +539,7 @@ func (self *Engine) StartSwap() error {
 				committee := make([]string, common.TotalValidators)
 				copy(committee, self.GetCommittee())
 
-				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PublicKey.Address, byte(0x00))
+				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PubKey, byte(0x00))
 				// TODO get first public key from candidate list
 				sealerPbk := "abc"
 

@@ -424,7 +424,7 @@ func (self RpcServer) handleListTransactions(params interface{}, closeChan <-cha
 		}
 
 		// get keyset only contain pub-key by deserializing
-		pubKeyStr := keys["PublicKey"].(string)
+		pubKeyStr := keys["PaymentAddress"].(string)
 		pubKey, err := wallet.Base58CheckDeserialize(pubKeyStr)
 		if err != nil {
 			return nil, NewRPCError(ErrUnexpected, err)
@@ -432,8 +432,8 @@ func (self RpcServer) handleListTransactions(params interface{}, closeChan <-cha
 
 		// create a key set
 		keySet := cashec.KeySet{
-			ReadonlyKey: readonlyKey.KeySet.ReadonlyKey,
-			PublicKey:   pubKey.KeySet.PublicKey,
+			ReadonlyKey:    readonlyKey.KeySet.ReadonlyKey,
+			PaymentAddress: pubKey.KeySet.PaymentAddress,
 		}
 
 		txsMap, err := self.config.BlockChain.GetListTxByReadonlyKey(&keySet, assetType)
@@ -546,7 +546,7 @@ func (self RpcServer) handleCreateRegistrationCandidateCommitee(params interface
 		return nil, nil
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Address[len(senderKey.KeySet.PublicKey.Address)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.PubKey[len(senderKey.KeySet.PaymentAddress.PubKey)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, nil
@@ -725,7 +725,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Address[len(senderKey.KeySet.PublicKey.Address)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.PubKey[len(senderKey.KeySet.PaymentAddress.PubKey)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
@@ -742,7 +742,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		}
 		paymentInfo := &privacy.PaymentInfo{
 			Amount:         uint64(amount.(float64)),
-			PaymentAddress: receiverPubKey.KeySet.PublicKey,
+			PaymentAddress: receiverPubKey.KeySet.PaymentAddress,
 		}
 		totalAmmount += int64(paymentInfo.Amount)
 		paymentInfos = append(paymentInfos, paymentInfo)
@@ -1346,7 +1346,7 @@ func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-c
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
 	result := make(map[string]string)
-	result["SealerPublicKey"] = base58.Base58Check{}.Encode(senderKey.KeySet.PublicKey.Address, byte(0x00))
+	result["SealerPublicKey"] = base58.Base58Check{}.Encode(senderKey.KeySet.PaymentAddress.PubKey, byte(0x00))
 	return result, nil
 }
 

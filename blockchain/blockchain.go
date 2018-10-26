@@ -558,7 +558,7 @@ func (self *BlockChain) GetListTxByReadonlyKey(keySet *cashec.KeySet, coinType s
 								var skenc client.ReceivingKey
 								var pkenc client.TransmissionKey
 								copy(skenc[:], keySet.ReadonlyKey.ReceivingKey[:])
-								copy(pkenc[:], keySet.PublicKey.TransmissionKey[:])
+								copy(pkenc[:], keySet.PaymentAddress.TransmissionKey[:])
 								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								spew.Dump(note)
 								if err == nil && note != nil {
@@ -689,7 +689,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								var skenc client.ReceivingKey
 								var pkenc client.TransmissionKey
 								copy(skenc[:], keys.ReadonlyKey.ReceivingKey[:])
-								copy(pkenc[:], keys.PublicKey.TransmissionKey[:])
+								copy(pkenc[:], keys.PaymentAddress.TransmissionKey[:])
 								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								if err == nil && note != nil && note.Value > 0 {
 									// can decrypt data -> got candidate commitment
@@ -714,7 +714,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 									copyDesc.AppendNote(note)
 									note.Cm = candidateCommitment
 
-									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).Address
+									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PubKey
 									copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 								} else {
 									continue
@@ -740,7 +740,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								}
 								copyDesc.AppendNote(note)
 								note.Cm = candidateCommitment
-								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).Address
+								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PubKey
 								copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 							}
 						}
