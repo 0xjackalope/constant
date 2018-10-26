@@ -50,8 +50,8 @@ type pkixPublicKey struct {
 // Supported key types include RSA, DSA, and ECDSA. Unknown key
 // types result in an error.
 //
-// On success, pub will be of type *rsa.PublicKey, *dsa.PublicKey,
-// or *ecdsa.PublicKey.
+// On success, pub will be of type *rsa.PaymentAddress, *dsa.PaymentAddress,
+// or *ecdsa.PaymentAddress.
 func ParsePKIXPublicKey(derBytes []byte) (pub interface{}, err error) {
 	var pki publicKeyInfo
 	if rest, err := asn1.Unmarshal(derBytes, &pki); err != nil {
@@ -865,7 +865,7 @@ func signaturePublicKeyAlgoMismatchError(expectedPubKeyAlgo PublicKeyAlgorithm, 
 }
 
 // CheckSignature verifies that signature is a valid signature over signed from
-// a crypto.PublicKey.
+// a crypto.PaymentAddress.
 func checkSignature(algo SignatureAlgorithm, signed, signature []byte, publicKey crypto.PublicKey) (err error) {
 	var hashType crypto.Hash
 	var pubKeyAlgo PublicKeyAlgorithm
@@ -2058,7 +2058,7 @@ var emptyASN1Subject = []byte{0x30, 0}
 // The returned slice is the certificate in DER encoding.
 //
 // All keys types that are implemented via crypto.Signer are supported (This
-// includes *rsa.PublicKey and *ecdsa.PublicKey.)
+// includes *rsa.PaymentAddress and *ecdsa.PaymentAddress.)
 //
 // The AuthorityKeyId will be taken from the SubjectKeyId of parent, if any,
 // unless the resulting certificate is self-signed. Otherwise the value from
@@ -2378,7 +2378,7 @@ func parseCSRExtensions(rawAttributes []asn1.RawValue) ([]pkix.Extension, error)
 // The returned slice is the certificate request in DER encoding.
 //
 // All keys types that are implemented via crypto.Signer are supported (This
-// includes *rsa.PublicKey and *ecdsa.PublicKey.)
+// includes *rsa.PaymentAddress and *ecdsa.PaymentAddress.)
 func CreateCertificateRequest(rand io.Reader, template *CertificateRequest, priv interface{}) (csr []byte, err error) {
 	key, ok := priv.(crypto.Signer)
 	if !ok {

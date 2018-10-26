@@ -558,7 +558,7 @@ func (self *BlockChain) GetListTxByReadonlyKey(keySet *cashec.KeySet, coinType s
 								var skenc client.ReceivingKey
 								var pkenc client.TransmissionKey
 								copy(skenc[:], keySet.ReadonlyKey.ReceivingKey[:])
-								copy(pkenc[:], keySet.PublicKey.TransmissionKey[:])
+								copy(pkenc[:], keySet.PaymentAddress.TransmissionKey[:])
 								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								spew.Dump(note)
 								if err == nil && note != nil {
@@ -689,7 +689,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								var skenc client.ReceivingKey
 								var pkenc client.TransmissionKey
 								copy(skenc[:], keys.ReadonlyKey.ReceivingKey[:])
-								copy(pkenc[:], keys.PublicKey.TransmissionKey[:])
+								copy(pkenc[:], keys.PaymentAddress.TransmissionKey[:])
 								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								if err == nil && note != nil && note.Value > 0 {
 									// can decrypt data -> got candidate commitment
@@ -714,7 +714,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 									copyDesc.AppendNote(note)
 									note.Cm = candidateCommitment
 
-									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).Address
+									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PublicKey
 									copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 								} else {
 									continue
@@ -740,7 +740,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								}
 								copyDesc.AppendNote(note)
 								note.Cm = candidateCommitment
-								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).Address
+								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PublicKey
 								copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 							}
 						}
@@ -852,7 +852,7 @@ func (self *BlockChain) GetAllUnitCoinSupplier() (map[string]uint64, error) {
 /*
 Get Candidate List from all chain and merge all to one
 */
-func (self *BlockChain) GetCndList() ([]string) {
+func (self *BlockChain) GetCommiteeCandateList() ([]string) {
 	cndList := []string{}
 	for _, bestState := range self.BestState {
 		for nodeAddr, _ := range bestState.Candidates {
@@ -862,8 +862,8 @@ func (self *BlockChain) GetCndList() ([]string) {
 		}
 	}
 	sort.Slice(cndList, func(i, j int) bool {
-		cndInfoi := self.GetCndInfo(cndList[i])
-		cndInfoj := self.GetCndInfo(cndList[j])
+		cndInfoi := self.GetCommiteeCandidateInfo(cndList[i])
+		cndInfoj := self.GetCommiteeCandidateInfo(cndList[j])
 		if cndInfoi.Value == cndInfoj.Value {
 			if cndInfoi.Timestamp < cndInfoj.Timestamp {
 				return true
@@ -886,8 +886,8 @@ func (self *BlockChain) GetCndList() ([]string) {
 	return cndList
 }
 
-func (self *BlockChain) GetCndInfo(nodeAddr string) (CndInfo) {
-	var cndVal CndInfo
+func (self *BlockChain) GetCommiteeCandidateInfo(nodeAddr string) (CommiteeCandidateInfo) {
+	var cndVal CommiteeCandidateInfo
 	for _, bestState := range self.BestState {
 		cndValTmp, ok := bestState.Candidates[nodeAddr]
 		if ok {

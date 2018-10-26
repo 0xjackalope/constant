@@ -244,7 +244,7 @@ func createSalaryTx(
 
 	// Create new notes: first one is salary UTXO, second one has 0 value
 	var temp []byte
-	copy(temp, receiverAddr.Address[:])
+	copy(temp, receiverAddr.PublicKey[:])
 	outNote := &client.Note{Value: salary, Apk: temp}
 	placeHolderOutputNote := &client.Note{Value: 0, Apk: temp}
 
@@ -264,7 +264,10 @@ func createSalaryTx(
 	tx.AddressLastByte = dummyAddress.Apk[len(dummyAddress.Apk)-1]
 	rtMap := map[byte][]byte{chainID: rt}
 	inputMap := map[byte][]*client.JSInput{chainID: inputs}
-	err = tx.BuildNewJSDesc(inputMap, outputs, rtMap, salary, 0, true)
+
+	// NOTE: always pay salary with constant coin
+	assetTypeToPaySalary := common.AssetTypeCoin
+	err = tx.BuildNewJSDesc(inputMap, outputs, rtMap, salary, 0, assetTypeToPaySalary, true)
 	if err != nil {
 		return nil, err
 	}

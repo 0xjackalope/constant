@@ -158,6 +158,7 @@ func CreateTx(
 	nullifiers map[byte]([][]byte),
 	commitments map[byte]([][]byte),
 	fee uint64,
+	assetType string,
 	senderChainID byte,
 ) (*Tx, error) {
 	fmt.Printf("List of all commitments before building tx:\n")
@@ -169,7 +170,7 @@ func CreateTx(
 	var value uint64
 	for _, p := range paymentInfo {
 		value += p.Amount
-		fmt.Printf("[CreateTx] paymentInfo.Value: %v, paymentInfo.Apk: %x\n", p.Amount, p.PaymentAddress.Address)
+		fmt.Printf("[CreateTx] paymentInfo.Value: %v, paymentInfo.Apk: %x\n", p.Amount, p.PaymentAddress.PublicKey)
 	}
 
 	type ChainNote struct {
@@ -212,7 +213,7 @@ func CreateTx(
 	var temp privacy.SpendingKey
 	copy(temp[:], (*senderKey)[:])
 	tempKeySet.ImportFromPrivateKey(&temp)
-	lastByte := tempKeySet.PublicKey.Address[len(tempKeySet.PublicKey.Address)-1]
+	lastByte := tempKeySet.PaymentAddress.PublicKey[len(tempKeySet.PaymentAddress.PublicKey)-1]
 	tx.AddressLastByte = lastByte
 	var latestAnchor map[byte][]byte
 
@@ -320,13 +321,13 @@ func CreateTx(
 			var outNote *client.Note
 			var encKey []byte
 			if p.Amount <= inputValue { // Enough for one more output note, include it
-				outNote = &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Address}
+				outNote = &client.Note{Value: p.Amount, Apk: p.PaymentAddress.PublicKey}
 				encKey = p.PaymentAddress.TransmissionKey
 				inputValue -= p.Amount
 				paymentInfo = paymentInfo[:len(paymentInfo)-1]
 				fmt.Printf("Use output value %v => %x\n", outNote.Value, outNote.Apk)
 			} else { // Not enough for this note, send some and save the rest for next js desc
-				outNote = &client.Note{Value: inputValue, Apk: p.PaymentAddress.Address}
+				outNote = &client.Note{Value: inputValue, Apk: p.PaymentAddress.PublicKey}
 				encKey = p.PaymentAddress.TransmissionKey
 				paymentInfo[len(paymentInfo)-1].Amount = p.Amount - inputValue
 				inputValue = 0
@@ -348,7 +349,7 @@ func CreateTx(
 
 			if p != nil && p.Amount == inputValue {
 				// Exactly equal, add this output note to js desc
-				outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Address}
+				outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.PublicKey}
 				var temp client.TransmissionKey
 				copy(temp[:], p.PaymentAddress.TransmissionKey[:])
 				output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
@@ -357,7 +358,7 @@ func CreateTx(
 				fmt.Printf("Exactly enough, include 1 more output %v, %x\n", outNote.Value, outNote.Apk)
 			} else {
 				// Cannot put the output note into this js desc, create a change note instead
-				outNote := &client.Note{Value: inputValue, Apk: senderFullKey.PublicKey.Address}
+				outNote := &client.Note{Value: inputValue, Apk: senderFullKey.PaymentAddress.PublicKey}
 				var temp client.TransmissionKey
 				copy(temp[:], p.PaymentAddress.TransmissionKey[:])
 				output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
@@ -385,7 +386,7 @@ func CreateTx(
 
 		// Generate proof and sign tx
 		var reward uint64 // Zero reward for non-salary transaction
-		err = tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, false)
+		err = tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, assetType, false)
 		if err != nil {
 			return nil, err
 		}
@@ -416,6 +417,7 @@ func (tx *Tx) BuildNewJSDesc(
 	outputs []*client.JSOutput,
 	rtMap map[byte][]byte,
 	reward, fee uint64,
+	assetType string,
 	noPrivacy bool,
 ) error {
 	// Gather inputs from different chains
@@ -446,7 +448,7 @@ func (tx *Tx) BuildNewJSDesc(
 	}
 
 	var ephemeralPrivKey *client.EphemeralPrivKey // nil ephemeral key, will be randomly created later
-	err = tx.buildJSDescAndEncrypt(inputs, outputs, proof, rts, reward, hSig, seed, ephemeralPrivKey)
+	err = tx.buildJSDescAndEncrypt(inputs, outputs, proof, rts, reward, hSig, seed, ephemeralPrivKey, assetType)
 	if err != nil {
 		return err
 	}
@@ -463,6 +465,7 @@ func (tx *Tx) buildJSDescAndEncrypt(
 	reward uint64,
 	hSig, seed []byte,
 	ephemeralPrivKey *client.EphemeralPrivKey,
+	assetType string,
 ) error {
 	nullifiers := [][]byte{inputs[0].InputNote.Nf, inputs[1].InputNote.Nf}
 	commitments := [][]byte{outputs[0].OutputNote.Cm, outputs[1].OutputNote.Cm}
@@ -511,7 +514,7 @@ func (tx *Tx) buildJSDescAndEncrypt(
 		EncryptedData:   noteciphers,
 		EphemeralPubKey: ephemeralPubKey[:],
 		HSigSeed:        seed,
-		Type:            common.AssetTypeCoin,
+		Type:            assetType,
 		Reward:          reward,
 		Vmacs:           vmacs,
 	}
@@ -638,19 +641,20 @@ func GenerateProofForGenesisTx(
 	seed, phi []byte,
 	outputR [][]byte,
 	ephemeralPrivKey client.EphemeralPrivKey,
+	assetType string,
 ) (*Tx, error) {
 	// Generate JoinSplit key pair to act as a dummy key (since we don't sign genesis tx)
 	privateSignKey := [32]byte{1}
 	keySet := &cashec.KeySet{}
 	keySet.ImportFromPrivateKeyByte(privateSignKey[:])
-	sigPubKey := keySet.PublicKey.Address[:]
+	sigPubKey := keySet.PaymentAddress.PublicKey[:]
 
 	// Get last byte of genesis sender's address
 	tempKeySet := cashec.KeySet{}
 	var temp privacy.SpendingKey
 	copy(temp[:], inputs[0].Key[:])
 	tempKeySet.ImportFromPrivateKey(&temp)
-	addressLastByte := tempKeySet.PublicKey.Address[len(tempKeySet.PublicKey.Address)-1]
+	addressLastByte := tempKeySet.PaymentAddress.PublicKey[len(tempKeySet.PaymentAddress.PublicKey)-1]
 
 	tx, err := CreateEmptyTx(common.TxNormalType)
 	if err != nil {
@@ -677,7 +681,7 @@ func GenerateProofForGenesisTx(
 		return nil, err
 	}
 
-	err = tx.buildJSDescAndEncrypt(inputs, outputs, proof, rts, reward, hSig, seed, &ephemeralPrivKey)
+	err = tx.buildJSDescAndEncrypt(inputs, outputs, proof, rts, reward, hSig, seed, &ephemeralPrivKey, assetType)
 	return tx, err
 }
 

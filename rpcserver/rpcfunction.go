@@ -19,6 +19,7 @@ import (
 	"github.com/ninjadotorg/cash/wire"
 	"golang.org/x/crypto/ed25519"
 	"github.com/ninjadotorg/cash/privacy"
+	"github.com/ninjadotorg/cash/common/base58"
 )
 
 type commandHandler func(RpcServer, interface{}, <-chan struct{}) (interface{}, error)
@@ -55,7 +56,7 @@ var RpcHandler = map[string]commandHandler{
 	SendRegistrationCandidateCommitee: RpcServer.handleSendRegistrationCandidateCommitee,
 	GetMempoolInfo:                    RpcServer.handleGetMempoolInfo,
 
-	GetCndList: RpcServer.handleGetCndList,
+	GetCndList: RpcServer.handleGetCommiteeCandidateList,
 
 	//POS
 	GetHeader: RpcServer.handleGetHeader, // Current committee, next block committee and candidate is included in block header
@@ -423,7 +424,7 @@ func (self RpcServer) handleListTransactions(params interface{}, closeChan <-cha
 		}
 
 		// get keyset only contain pub-key by deserializing
-		pubKeyStr := keys["PublicKey"].(string)
+		pubKeyStr := keys["PaymentAddress"].(string)
 		pubKey, err := wallet.Base58CheckDeserialize(pubKeyStr)
 		if err != nil {
 			return nil, NewRPCError(ErrUnexpected, err)
@@ -431,8 +432,8 @@ func (self RpcServer) handleListTransactions(params interface{}, closeChan <-cha
 
 		// create a key set
 		keySet := cashec.KeySet{
-			ReadonlyKey: readonlyKey.KeySet.ReadonlyKey,
-			PublicKey:   pubKey.KeySet.PublicKey,
+			ReadonlyKey:    readonlyKey.KeySet.ReadonlyKey,
+			PaymentAddress: pubKey.KeySet.PaymentAddress,
 		}
 
 		txsMap, err := self.config.BlockChain.GetListTxByReadonlyKey(&keySet, assetType)
@@ -545,7 +546,7 @@ func (self RpcServer) handleCreateRegistrationCandidateCommitee(params interface
 		return nil, nil
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Address[len(senderKey.KeySet.PublicKey.Address)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.PublicKey[len(senderKey.KeySet.PaymentAddress.PublicKey)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, nil
@@ -572,9 +573,12 @@ func (self RpcServer) handleCreateRegistrationCandidateCommitee(params interface
 		return nil, errors.New("node address is wrong")
 	}
 
+	// ONLY use CONSTANT COIN for registration candidate tx
+	assetType := common.AssetTypeCoin
+
 	// list unspent tx for estimation fee
 	estimateTotalAmount := totalAmmount
-	usableTxsMap, _ := self.config.BlockChain.GetListTxByPrivateKey(&senderKey.KeySet.PrivateKey, common.AssetTypeCoin, transaction.SortByAmount, false)
+	usableTxsMap, _ := self.config.BlockChain.GetListTxByPrivateKey(&senderKey.KeySet.PrivateKey, assetType, transaction.SortByAmount, false)
 	candidateTxs := make([]*transaction.Tx, 0)
 	candidateTxsMap := make(map[byte][]*transaction.Tx)
 	for chainId, usableTxs := range usableTxsMap {
@@ -642,6 +646,7 @@ func (self RpcServer) handleCreateRegistrationCandidateCommitee(params interface
 		nullifiersDb,
 		commitmentsDb,
 		realFee,
+		assetType,
 		chainIdSender,
 		nodeAddr)
 	if err != nil {
@@ -720,7 +725,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Address[len(senderKey.KeySet.PublicKey.Address)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.PublicKey[len(senderKey.KeySet.PaymentAddress.PublicKey)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
@@ -737,7 +742,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		}
 		paymentInfo := &privacy.PaymentInfo{
 			Amount:         uint64(amount.(float64)),
-			PaymentAddress: receiverPubKey.KeySet.PublicKey,
+			PaymentAddress: receiverPubKey.KeySet.PaymentAddress,
 		}
 		totalAmmount += int64(paymentInfo.Amount)
 		paymentInfos = append(paymentInfos, paymentInfo)
@@ -746,7 +751,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 	// param #3: estimation fee coin per kb
 	estimateFeeCoinPerKb := int64(arrayParams[2].(float64))
 
-	// param #4: estimation fee coin per kb
+	// param #4: estimation fee coin per kb by numblock
 	numBlock := uint32(arrayParams[3].(float64))
 
 	nodeAddr := arrayParams[4].(string)
@@ -823,6 +828,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		nullifiersDb,
 		commitmentsDb,
 		realFee,
+		common.AssetTypeCoin,
 		chainIdSender)
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
@@ -1332,25 +1338,20 @@ func (self RpcServer) handleSetTxFee(params interface{}, closeChan <-chan struct
 	return err == nil, NewRPCError(ErrUnexpected, err)
 }
 
-/*func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender
 	senderKey, err := wallet.Base58CheckDeserialize(params.(string))
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	sealerKeySet, err := senderKey.KeySet.CreateSealerKeySet()
-	if err != nil {
-		return nil, NewRPCError(ErrUnexpected, err)
-	}
 	result := make(map[string]string)
-	result["SealerKeySet"] = sealerKeySet.EncodeToString()
-	result["SealerPublicKey"] = base58.Base58Check{}.Encode(sealerKeySet.SpublicKey, byte(0x00))
+	result["SealerPublicKey"] = base58.Base58Check{}.Encode(senderKey.KeySet.PaymentAddress.PublicKey, byte(0x00))
 	return result, nil
-}*/
+}
 
-func (self RpcServer) handleGetCndList(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+func (self RpcServer) handleGetCommiteeCandidateList(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender
-	cndList := self.config.BlockChain.GetCndList()
+	cndList := self.config.BlockChain.GetCommiteeCandateList()
 	return cndList, nil
 }

@@ -762,7 +762,7 @@ func (self *Server) OnAddr(peerConn *peer.PeerConn, msg *wire.MessageAddr) {
 	//	for _, listen := range self.connManager.ListeningPeers {
 	//		for _, _peerConn := range listen.PeerConns {
 	//			if _peerConn.RemotePeerID.Pretty() != self.connManager.GetPeerId(rawPeer.RemoteRawAddress) {
-	//				go self.connManager.Connect(rawPeer.RemoteRawAddress, rawPeer.PublicKey)
+	//				go self.connManager.Connect(rawPeer.RemoteRawAddress, rawPeer.PaymentAddress)
 	//			}
 	//		}
 	//	}
@@ -808,7 +808,7 @@ func (self *Server) GetPeerIDsFromPublicKey(pubKey string) []peer2.ID {
 
 	for _, listener := range self.connManager.Config.ListenerPeers {
 		for _, peerConn := range listener.PeerConns {
-			// Logger.log.Info("Test PeerConn", peerConn.RemotePeer.PublicKey)
+			// Logger.log.Info("Test PeerConn", peerConn.RemotePeer.PaymentAddress)
 			if peerConn.RemotePeer.PublicKey == pubKey {
 				exist := false
 				for _, item := range result {
@@ -913,7 +913,7 @@ func (self Server) PushVersionMessage(peerConn *peer.PeerConn) error {
 			Logger.log.Critical("Invalid sealer's private key")
 			return err
 		}
-		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.PublicKey.Address, byte(0x00))
+		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.PaymentAddress.PublicKey, byte(0x00))
 	}
 
 	if err != nil {

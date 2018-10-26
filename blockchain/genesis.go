@@ -67,14 +67,14 @@ func (self GenesisBlockGenerator) createGenesisTx(initialCoin uint64, initialAdd
 	if err != nil {
 		return nil, err
 	}
-	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PublicKey.Address}
-	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PublicKey.Address}
+	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PaymentAddress.PublicKey}
+	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PaymentAddress.PublicKey}
 
-	fmt.Printf("EncKey: %x\n", key.KeySet.PublicKey.TransmissionKey)
+	fmt.Printf("EncKey: %x\n", key.KeySet.PaymentAddress.TransmissionKey)
 
 	// Create deterministic outputs
 	var temp client.TransmissionKey
-	copy(temp[:], key.KeySet.PublicKey.TransmissionKey[:])
+	copy(temp[:], key.KeySet.PaymentAddress.TransmissionKey[:])
 	outputs := []*client.JSOutput{
 		&client.JSOutput{EncKey: temp, OutputNote: outNote},
 		&client.JSOutput{EncKey: temp, OutputNote: placeHolderOutputNote},
@@ -95,6 +95,7 @@ func (self GenesisBlockGenerator) createGenesisTx(initialCoin uint64, initialAdd
 		GENESIS_BLOCK_PHI[:],
 		GENESIS_BLOCK_OUTPUT_R,
 		ephemeralPrivKey,
+		common.AssetTypeCoin,
 	)
 	return tx, err
 }
@@ -192,7 +193,7 @@ func (self GenesisBlockGenerator) getGenesisTx(genesisBlockReward uint64) (*tran
 	}
 
 	//tempKeySet, _ := wallet.Base58CheckDeserialize(GENESIS_BLOCK_PAYMENT_ADDR)
-	//lastByte := tempKeySet.KeySet.PublicKey.Apk[len(tempKeySet.KeySet.PublicKey.Apk)-1]
+	//lastByte := tempKeySet.KeySet.PaymentAddress.Apk[len(tempKeySet.KeySet.PaymentAddress.Apk)-1]
 
 	tx := &transaction.Tx{
 		Version:  transaction.TxVersion,

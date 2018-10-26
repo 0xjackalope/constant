@@ -27,7 +27,7 @@ func main() {
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }
-	// fmt.Printf("Address decom: %v\n", point)
+	// fmt.Printf("PublicKey decom: %v\n", point)
 
 	// receivingKey := privacy.GenerateReceivingKey(spendingKey)
 	// fmt.Printf("\nReceiving key: %v\n", receivingKey)
