@@ -2,7 +2,6 @@ package privacy
 
 // Coin represents a coin
 type Coin struct {
-	//PrdNumber
 	Address,
 	SerialNumber,
 	Value,
@@ -13,6 +12,8 @@ type Coin struct {
 
 // Commit commits a coin
 func (coin *Coin) Commit() {
+	var Cm CommitmentParams
+	Cm.InitCommitment()
 	coin.CoinCommitment = Cm.Commit(coin.R, coin.Address, coin.Value, coin.SerialNumber)
 }
 

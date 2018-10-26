@@ -230,10 +230,10 @@ func CreateTxs(
 	// 	}
 	// }
 
-	// // Left side value
+	// Left side value
 	// var sumInputValue uint64
-	// for _, chainNote := range inputNotes {
-	// 	sumInputValue += chainNote.note.Value
+	// for _, coin := range unspentCoins {
+	// 	sumInputValue += coin.Value
 	// }
 	// if sumInputValue < value+fee {
 	// 	return nil, fmt.Errorf("Input value less than output value")
