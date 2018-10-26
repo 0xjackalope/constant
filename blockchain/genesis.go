@@ -67,14 +67,14 @@ func (self GenesisBlockGenerator) createGenesisTx(initialCoin uint64, initialAdd
 	if err != nil {
 		return nil, err
 	}
-	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PaymentAddress.PublicKey}
-	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PaymentAddress.PublicKey}
+	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PaymentAddress.Pk}
+	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PaymentAddress.Pk}
 
-	fmt.Printf("EncKey: %x\n", key.KeySet.PaymentAddress.TransmissionKey)
+	fmt.Printf("EncKey: %x\n", key.KeySet.PaymentAddress.Tk)
 
 	// Create deterministic outputs
 	var temp client.TransmissionKey
-	copy(temp[:], key.KeySet.PaymentAddress.TransmissionKey[:])
+	copy(temp[:], key.KeySet.PaymentAddress.Tk[:])
 	outputs := []*client.JSOutput{
 		&client.JSOutput{EncKey: temp, OutputNote: outNote},
 		&client.JSOutput{EncKey: temp, OutputNote: placeHolderOutputNote},

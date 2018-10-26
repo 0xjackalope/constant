@@ -1,14 +1,15 @@
 package privacy
 
+type SerialNumber []byte //32 bytes
+type CoinCommitment []byte //32 bytes
+
+
 // Coin represents a coin
 type Coin struct {
-	//PrdNumber
-	Address,
-	SerialNumber,
-	Value,
-	CoinCommitment,
-	R,
-	Info []byte
+	Address			PublicKey
+	SerialNumber 	SerialNumber
+	CoinCommitment 	CoinCommitment
+	Value, R, Info 	[]byte
 }
 
 // Commit commits a coin

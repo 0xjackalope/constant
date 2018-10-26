@@ -208,7 +208,7 @@ func CreateTxs(
 	var value uint64
 	for _, p := range paymentInfo {
 		value += p.Amount
-		fmt.Printf("[CreateTx] paymentInfo.Value: %+v, paymentInfo.Adreess: %x\n", p.Amount, p.PaymentAddress.PublicKey)
+		fmt.Printf("[CreateTx] paymentInfo.Value: %+v, paymentInfo.Adreess: %x\n", p.Amount, p.PaymentAddress.Pk)
 	}
 
 	// type ChainNote struct {
@@ -230,10 +230,10 @@ func CreateTxs(
 	// 	}
 	// }
 
-	// // Left side value
+	// Left side value
 	// var sumInputValue uint64
-	// for _, chainNote := range inputNotes {
-	// 	sumInputValue += chainNote.note.Value
+	// for _, coin := range unspentCoins {
+	// 	sumInputValue += coin.Value
 	// }
 	// if sumInputValue < value+fee {
 	// 	return nil, fmt.Errorf("Input value less than output value")
@@ -251,7 +251,7 @@ func CreateTxs(
 	// var temp privacy.SpendingKey
 	// copy(temp[:], (*senderKey)[:])
 	// tempKeySet.ImportFromPrivateKey(&temp)
-	// lastByte := tempKeySet.PaymentAddress.PublicKey[len(tempKeySet.PaymentAddress.PublicKey)-1]
+	// lastByte := tempKeySet.PaymentAddress.Pk[len(tempKeySet.PaymentAddress.Pk)-1]
 	// tx.AddressLastByte = lastByte
 	// var latestAnchor map[byte][]byte
 
@@ -359,20 +359,20 @@ func CreateTxs(
 	// 		var outNote *client.Note
 	// 		var encKey []byte
 	// 		if p.Amount <= inputValue { // Enough for one more output note, include it
-	// 			outNote = &client.Note{Value: p.Amount, Apk: p.PaymentAddress.PublicKey}
-	// 			encKey = p.PaymentAddress.TransmissionKey
+	// 			outNote = &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Pk}
+	// 			encKey = p.PaymentAddress.Tk
 	// 			inputValue -= p.Amount
 	// 			paymentInfo = paymentInfo[:len(paymentInfo)-1]
 	// 			fmt.Printf("Use output value %+v => %x\n", outNote.Value, outNote.Apk)
 	// 		} else { // Not enough for this note, send some and save the rest for next js desc
-	// 			outNote = &client.Note{Value: inputValue, Apk: p.PaymentAddress.PublicKey}
-	// 			encKey = p.PaymentAddress.TransmissionKey
+	// 			outNote = &client.Note{Value: inputValue, Apk: p.PaymentAddress.Pk}
+	// 			encKey = p.PaymentAddress.Tk
 	// 			paymentInfo[len(paymentInfo)-1].Amount = p.Amount - inputValue
 	// 			inputValue = 0
 	// 			fmt.Printf("Partially send %+v to %x\n", outNote.Value, outNote.Apk)
 	// 		}
 
-	// 		var temp client.TransmissionKey
+	// 		var temp client.Tk
 	// 		copy(temp[:], encKey[:])
 	// 		output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
 	// 		outputs = append(outputs, output)
@@ -387,18 +387,18 @@ func CreateTxs(
 
 	// 		if p != nil && p.Amount == inputValue {
 	// 			// Exactly equal, add this output note to js desc
-	// 			outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.PublicKey}
-	// 			var temp client.TransmissionKey
-	// 			copy(temp[:], p.PaymentAddress.TransmissionKey[:])
+	// 			outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Pk}
+	// 			var temp client.Tk
+	// 			copy(temp[:], p.PaymentAddress.Tk[:])
 	// 			output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
 	// 			outputs = append(outputs, output)
 	// 			paymentInfo = paymentInfo[:len(paymentInfo)-1]
 	// 			fmt.Printf("Exactly enough, include 1 more output %+v, %x\n", outNote.Value, outNote.Apk)
 	// 		} else {
 	// 			// Cannot put the output note into this js desc, create a change note instead
-	// 			outNote := &client.Note{Value: inputValue, Apk: senderFullKey.PaymentAddress.PublicKey}
-	// 			var temp client.TransmissionKey
-	// 			copy(temp[:], p.PaymentAddress.TransmissionKey[:])
+	// 			outNote := &client.Note{Value: inputValue, Apk: senderFullKey.PaymentAddress.Pk}
+	// 			var temp client.Tk
+	// 			copy(temp[:], p.PaymentAddress.Tk[:])
 	// 			output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
 	// 			outputs = append(outputs, output)
 	// 			fmt.Printf("Create change outnote %+v, %x\n", outNote.Value, outNote.Apk)
@@ -506,7 +506,7 @@ func CreateTxs(
 // 	nullifiers := [][]byte{inputs[0].InputNote.Nf, inputs[1].InputNote.Nf}
 // 	commitments := [][]byte{outputs[0].OutputNote.Cm, outputs[1].OutputNote.Cm}
 // 	notes := [2]*client.Note{outputs[0].OutputNote, outputs[1].OutputNote}
-// 	keys := [2]client.TransmissionKey{outputs[0].EncKey, outputs[1].EncKey}
+// 	keys := [2]client.Tk{outputs[0].EncKey, outputs[1].EncKey}
 
 // 	ephemeralPubKey := new(client.EphemeralPubKey)
 // 	if ephemeralPrivKey == nil {
@@ -669,14 +669,14 @@ func Verify(tx *Txs) (bool, error) {
 // 	privateSignKey := [32]byte{1}
 // 	keySet := &cashec.KeySet{}
 // 	keySet.ImportFromPrivateKeyByte(privateSignKey[:])
-// 	sigPubKey := keySet.PaymentAddress.PublicKey[:]
+// 	sigPubKey := keySet.PaymentAddress.Pk[:]
 
 // 	// Get last byte of genesis sender's address
 // 	tempKeySet := cashec.KeySet{}
 // 	var temp privacy.SpendingKey
 // 	copy(temp[:], inputs[0].Key[:])
 // 	tempKeySet.ImportFromPrivateKey(&temp)
-// 	addressLastByte := tempKeySet.PaymentAddress.PublicKey[len(tempKeySet.PaymentAddress.PublicKey)-1]
+// 	addressLastByte := tempKeySet.PaymentAddress.Pk[len(tempKeySet.PaymentAddress.Pk)-1]
 
 // 	tx, err := CreateEmptyTx()
 // 	if err != nil {
