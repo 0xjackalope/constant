@@ -13,7 +13,7 @@ package privacy
 // }
 
 type ZkpPedersenCM struct {
-	Gamma1, Gamma2 []byte
+	Gamma1, Gamma2, Gamma3, Gamma4 []byte
 }
 
 // ZkpPedersenCMComponent create zero knowledge proof for an opening of a Pedersen commitment
@@ -21,3 +21,4 @@ func ZkpPedersenCMComponent(cm CommitmentParams, pubKey PublicKey, sn SerialNumb
 	zkp := new(ZkpPedersenCM)
 	return zkp
 }
+
