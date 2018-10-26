@@ -13,8 +13,7 @@ type Coin struct {
 
 // Commit commits a coin
 func (coin *Coin) Commit() {
-	var cm Commitment
-	coin.CoinCommitment = cm.Commit(coin.R, coin.Address, coin.Value, coin.SerialNumber)
+	coin.CoinCommitment = Cm.Commit(coin.R, coin.Address, coin.Value, coin.SerialNumber)
 }
 
 // type Cryptosystem struct{

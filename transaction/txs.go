@@ -16,23 +16,6 @@ import (
 	"github.com/ninjadotorg/cash/privacy"
 )
 
-// Tx represents a coin-transfer-transaction stored in a block
-// type Tx struct {
-// 	Version  int8   `json:"Version"`
-// 	Type     string `json:"Type"` // n
-// 	LockTime int64  `json:"LockTime"`
-// 	Fee      uint64 `json:"Fee"` // Fee applies to first js desc
-
-// 	Descs    []*JoinSplitDesc `json:"Descs"`
-// 	JSPubKey []byte           `json:"JSPubKey,omitempty"` // 64 bytes
-// 	JSSig    []byte           `json:"JSSig,omitempty"`    // 64 bytes
-
-// 	AddressLastByte byte `json:"AddressLastByte"`
-
-// 	txId       *common.Hash
-// 	sigPrivKey *client.PrivateKey
-// }
-
 // Txs represents a coin-transfer-transaction stored in a block
 type Txs struct {
 	Version  int8   `json:"Version"`
@@ -199,7 +182,7 @@ func (tx *Txs) GetSenderAddrLastByte() byte {
 	return tx.AddressLastByte
 }
 
-// CreateTx creates transaction with appropriate proof for a private payment
+// CreateTxs creates transaction with appropriate proof for a private payment
 // rts: mapping from the chainID to the root of the commitment merkle tree at current block
 // 		(the latest block of the node creating this tx)
 func CreateTxs(

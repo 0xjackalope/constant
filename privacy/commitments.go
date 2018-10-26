@@ -22,6 +22,10 @@ type CommitmentParams struct {
 	G0, G1, G2, H EllipticPoint // generator
 }
 
+// Cm is a global variable, it is initialized only one time
+// var Cm Commitment
+// Cm = Cm.InitCommitment()
+
 // hashGenerator create new generator from a generator using hash function
 func hashGenerator(g EllipticPoint) EllipticPoint {
 	// TODO: res.X = hash(g.X), res.Y = sqrt(res.X^3 - 3X + B)
@@ -40,12 +44,12 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 		}
 	}
 	//check Point of degree 2
-	pointToChecked:= new(EllipticPoint)
-	pointToChecked.X, pointToChecked.Y	= Curve.Double(res.X, res.Y)
+	pointToChecked := new(EllipticPoint)
+	pointToChecked.X, pointToChecked.Y = Curve.Double(res.X, res.Y)
 
-	if (pointToChecked.X == nil || pointToChecked.Y == nil) {
-		fmt.Errorf("Point at infinity");
-		return *new(EllipticPoint);
+	if pointToChecked.X == nil || pointToChecked.Y == nil {
+		fmt.Errorf("Point at infinity")
+		return *new(EllipticPoint)
 	}
 	return *res
 }
