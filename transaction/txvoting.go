@@ -18,18 +18,18 @@ import (
 // TxVoting ...
 type TxVoting struct {
 	Tx
-	NodeAddr string
+	PublicKey string
 }
 
 // CreateEmptyVotingTx - return an init tv voting
-func CreateEmptyVotingTx(nodeAddr string) (*TxVoting, error) {
+func CreateEmptyVotingTx(pubkey string) (*TxVoting, error) {
 	emptyTx, err := CreateEmptyTx(common.TxVotingType)
 	if err != nil {
 		return nil, err
 	}
 	txVoting := &TxVoting{
-		Tx:       *emptyTx,
-		NodeAddr: nodeAddr,
+		Tx:        *emptyTx,
+		PublicKey: pubkey,
 	}
 	return txVoting, nil
 }
@@ -65,7 +65,7 @@ func (tx TxVoting) Hash() *common.Hash {
 	record += string(tx.Tx.JSPubKey)
 	// record += string(tx.JSSig)
 	record += string(tx.Tx.AddressLastByte)
-	record += tx.NodeAddr
+	record += tx.PublicKey
 	hash := common.DoubleHashH([]byte(record))
 	return &hash
 }
@@ -126,6 +126,7 @@ func CreateVotingTx(
 	nullifiers map[byte]([][]byte),
 	commitments map[byte]([][]byte),
 	fee uint64,
+	assetType string,
 	senderChainID byte,
 	nodeAddr string,
 ) (*TxVoting, error) {
@@ -352,7 +353,7 @@ func CreateVotingTx(
 
 		// Generate proof and sign tx
 		var reward uint64 // Zero reward for non-salary transaction
-		err = tx.Tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, true)
+		err = tx.Tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, assetType, true)
 		if err != nil {
 			return nil, err
 		}

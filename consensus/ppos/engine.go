@@ -465,26 +465,26 @@ func (self *Engine) UpdateChain(block *blockchain.Block) {
 	self.committee.UpdateCommittee(block.ChainLeader, block.Header.BlockCommitteeSigs)
 }
 
-func (self *Engine) GetCndList(block *blockchain.Block) map[string]blockchain.CndInfo {
+func (self *Engine) GetCndList(block *blockchain.Block) map[string]blockchain.CommiteeCandidateInfo {
 	bestState := self.config.BlockChain.BestState[block.Header.ChainID]
 	candidates := bestState.Candidates
 	if candidates == nil {
-		candidates = make(map[string]blockchain.CndInfo)
+		candidates = make(map[string]blockchain.CommiteeCandidateInfo)
 	}
 	for _, tx := range block.Transactions {
 		if tx.GetType() == common.TxVotingType {
 			txV, ok := tx.(*transaction.TxVoting)
-			nodeAddr := txV.NodeAddr
+			nodeAddr := txV.PublicKey
 			cndVal, ok := candidates[nodeAddr]
 			_ = cndVal
 			if !ok {
-				candidates[nodeAddr] = blockchain.CndInfo{
+				candidates[nodeAddr] = blockchain.CommiteeCandidateInfo{
 					Value:     txV.GetValue(),
 					Timestamp: block.Header.Timestamp,
 					ChainID:   block.Header.ChainID,
 				}
 			} else {
-				candidates[nodeAddr] = blockchain.CndInfo{
+				candidates[nodeAddr] = blockchain.CommiteeCandidateInfo{
 					Value:     cndVal.Value + txV.GetValue(),
 					Timestamp: block.Header.Timestamp,
 					ChainID:   block.Header.ChainID,
@@ -557,8 +557,18 @@ func (self *Engine) StartSwap() error {
 						case swapSig := <-self.cSwapSig:
 							_ = swapSig
 							if common.IndexOfStr(swapSig.Validator, committee) >= 0 && swapSig.RequesterPbk == requesterPbk {
+								// verify signature
+								rawBytes := []byte{}
+								rawBytes = append(rawBytes, []byte(requesterPbk)...)
+								rawBytes = append(rawBytes, chainId)
+								rawBytes = append(rawBytes, []byte(sealerPbk)...)
+								err := cashec.ValidateDataB58(swapSig.Validator, swapSig.ValidatorSig, rawBytes)
+								if err != nil {
+									continue
+								}
+								Logger.log.Info("SWAP validate signature ok from ", swapSig.Validator, sealerPbk)
 								signatureMap[swapSig.Validator] = swapSig.ValidatorSig
-								if len(signatureMap) >= (common.TotalValidators / 2) {
+								if len(signatureMap) >= common.TotalValidators / 2 {
 									close(allSigReceived)
 									return
 								}
