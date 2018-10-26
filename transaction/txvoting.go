@@ -9,8 +9,6 @@ import (
 	"math/big"
 	"sort"
 	"strconv"
-	"time"
-
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
@@ -23,33 +21,17 @@ type TxVoting struct {
 	NodeAddr string
 }
 
-// CreateVotingTx ...
+// CreateEmptyVotingTx - return an init tv voting
 func CreateEmptyVotingTx(nodeAddr string) (*TxVoting, error) {
-	//Generate signing key 96 bytes
-	sigPrivKey, err := client.GenerateKey(rand.Reader)
+	emptyTx, err := CreateEmptyTx(common.TxVotingType)
 	if err != nil {
 		return nil, err
 	}
-
-	// Verification key 64 bytes
-	sigPubKey := PubKeyToByteArray(&sigPrivKey.PublicKey)
-
-	tx := &TxVoting{
-		Tx: Tx{
-			Type:            common.TxVotingType,
-			LockTime:        time.Now().Unix(),
-			Fee:             0,
-			Descs:           nil,
-			JSPubKey:        sigPubKey,
-			JSSig:           nil,
-			AddressLastByte: 0,
-
-			txId:       nil,
-			sigPrivKey: sigPrivKey,
-		},
+	txVoting := &TxVoting{
+		Tx:       *emptyTx,
 		NodeAddr: nodeAddr,
 	}
-	return tx, nil
+	return txVoting, nil
 }
 
 func (tx *TxVoting) GetValue() uint64 {
@@ -369,7 +351,7 @@ func CreateVotingTx(
 		}
 
 		// Generate proof and sign tx
-		var reward uint64 // Zero reward for non-coinbase transaction
+		var reward uint64 // Zero reward for non-salary transaction
 		err = tx.Tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, true)
 		if err != nil {
 			return nil, err

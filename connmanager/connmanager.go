@@ -403,7 +403,7 @@ listen:
 				}
 			}
 		}
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 60)
 	}
 }
 

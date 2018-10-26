@@ -84,7 +84,7 @@ func (tx *Tx) ValidateTransaction() bool {
 	// Check each js desc
 	for txID, desc := range tx.Descs {
 		//if desc.Reward != 0 {
-		//	return false // Coinbase tx shouldn't be broadcasted across the network
+		//	return false // Salary tx shouldn't be broadcasted across the network
 		//}
 
 		// Apply fee only to the first desc of tx
@@ -204,7 +204,7 @@ func CreateTx(
 	senderFullKey.ImportFromPrivateKeyByte((*senderKey)[:])
 
 	// Create tx before adding js descs
-	tx, err := CreateEmptyTx()
+	tx, err := CreateEmptyTx(common.TxNormalType)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func CreateTx(
 		// TODO: Shuffle output notes randomly (if necessary)
 
 		// Generate proof and sign tx
-		var reward uint64 // Zero reward for non-coinbase transaction
+		var reward uint64 // Zero reward for non-salary transaction
 		err = tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, false)
 		if err != nil {
 			return nil, err
@@ -652,7 +652,7 @@ func GenerateProofForGenesisTx(
 	tempKeySet.ImportFromPrivateKey(&temp)
 	addressLastByte := tempKeySet.PublicKey.Address[len(tempKeySet.PublicKey.Address)-1]
 
-	tx, err := CreateEmptyTx()
+	tx, err := CreateEmptyTx(common.TxNormalType)
 	if err != nil {
 		return nil, err
 	}
@@ -745,7 +745,7 @@ func EstimateTxSize(usableTx []*Tx, payments []*privacy.PaymentInfo) uint64 {
 	var sizeType uint64 = 8     // string
 	var sizeLockTime uint64 = 8 // int64
 	var sizeFee uint64 = 8      // uint64
-	var sizeDescs = uint64(max(1, (len(usableTx)+len(payments)-3))) * EstimateJSDescSize()
+	var sizeDescs = uint64(max(1, (len(usableTx) + len(payments) - 3))) * EstimateJSDescSize()
 	var sizejSPubKey uint64 = 64 // [64]byte
 	var sizejSSig uint64 = 64    // [64]byte
 	estimateTxSizeInByte := sizeVersion + sizeType + sizeLockTime + sizeFee + sizeDescs + sizejSPubKey + sizejSSig
@@ -753,7 +753,7 @@ func EstimateTxSize(usableTx []*Tx, payments []*privacy.PaymentInfo) uint64 {
 }
 
 // CreateEmptyTx returns a new Tx initialized with default data
-func CreateEmptyTx() (*Tx, error) {
+func CreateEmptyTx(txType string) (*Tx, error) {
 	//Generate signing key 96 bytes
 	sigPrivKey, err := client.GenerateKey(rand.Reader)
 	if err != nil {
@@ -765,7 +765,7 @@ func CreateEmptyTx() (*Tx, error) {
 
 	tx := &Tx{
 		Version:         TxVersion,
-		Type:            common.TxNormalType,
+		Type:            txType,
 		LockTime:        time.Now().Unix(),
 		Fee:             0,
 		Descs:           nil,
