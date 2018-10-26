@@ -7,16 +7,7 @@ import (
 	"math/rand"
 	"time"
 )
-import (
-<<<<<<< HEAD
-	"github.com/minio/blake2b-simd"
-	"math/big"
-	"math/rand"
-	"time"
-	"fmt"
 
-	"github.com/minio/blake2b-simd"
-)
 
 // type Proof interface{
 // 	Params()
@@ -29,10 +20,8 @@ import (
 // 	CM01 []byte,
 
 // }
-
-<<<<<<< HEAD
 //ZkpPedersenCM contains proof's value
-type ZkpPedersenCM struct {
+type ZkpPedersenCMProof struct {
 	Alpha, Beta, GammaAddr, GammaValue, GammaSN, GammaR []byte
 }
 func getRandom() []byte{
@@ -100,12 +89,6 @@ func pedersenCMGenerateProof(cm CommitmentParams, pubKey PublicKey, sn SerialNum
 	copy(zkp.GammaR, x.Add(x,tmpRand.SetBytes(r3)).Bytes());
 	return zkp
 }
-
-//ZkpPedersenCMProof contains proof's value
-type ZkpPedersenCMProof struct {
-	Alpha, Beta, GammaAddr, GammaValue, GammaSN, GammaR []byte
-}
-
 
 //ZkpPedersenCMVerify check the proof's value
 func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCMProof, commitmentsvalue []byte) bool {
