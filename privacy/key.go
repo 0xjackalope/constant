@@ -64,14 +64,14 @@ type EllipticPoint struct {
 
 // ViewingKey represents an key that be used to view transactions
 type ViewingKey struct {
-	Pk PublicKey 	// 33 bytes, use to receive coin
+	Pk PublicKey    // 33 bytes, use to receive coin
 	Rk ReceivingKey // 32 bytes, use to decrypt pointByte
 }
 
 // PaymentAddress represents an payment address of receiver
 type PaymentAddress struct {
-	Pk PublicKey 		// 33 bytes, use to receive coin
-	Tk TransmissionKey 	// 33 bytes, use to encrypt pointByte
+	Pk PublicKey       // 33 bytes, use to receive coin
+	Tk TransmissionKey // 33 bytes, use to encrypt pointByte
 }
 
 type PaymentInfo struct {
@@ -108,8 +108,8 @@ func GenerateSpendingKey(seed []byte) SpendingKey {
 func GenerateAddress(spendingKey []byte) PublicKey {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
-	fmt.Printf("p.X: %v\n", p.X)
-	fmt.Printf("p.Y: %v\n", p.Y)
+	Logger.log.Infof("p.X: %v\n", p.X)
+	Logger.log.Infof("p.Y: %v\n", p.Y)
 	address := CompressKey(p)
 
 	return address
