@@ -913,7 +913,7 @@ func (self Server) PushVersionMessage(peerConn *peer.PeerConn) error {
 			Logger.log.Critical("Invalid sealer's private key")
 			return err
 		}
-		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.PaymentAddress.PubKey, byte(0x00))
+		msg.(*wire.MessageVersion).PublicKey = base58.Base58Check{}.Encode(keySet.PaymentAddress.PublicKey, byte(0x00))
 	}
 
 	if err != nil {

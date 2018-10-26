@@ -546,7 +546,7 @@ func (self RpcServer) handleCreateRegistrationCandidateCommitee(params interface
 		return nil, nil
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PaymentAddress.PubKey[len(senderKey.KeySet.PaymentAddress.PubKey)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.PublicKey[len(senderKey.KeySet.PaymentAddress.PublicKey)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, nil
@@ -725,7 +725,7 @@ func (self RpcServer) handleCreateTransaction(params interface{}, closeChan <-ch
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PaymentAddress.PubKey[len(senderKey.KeySet.PaymentAddress.PubKey)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.PublicKey[len(senderKey.KeySet.PaymentAddress.PublicKey)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
@@ -1346,7 +1346,7 @@ func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-c
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
 	result := make(map[string]string)
-	result["SealerPublicKey"] = base58.Base58Check{}.Encode(senderKey.KeySet.PaymentAddress.PubKey, byte(0x00))
+	result["SealerPublicKey"] = base58.Base58Check{}.Encode(senderKey.KeySet.PaymentAddress.PublicKey, byte(0x00))
 	return result, nil
 }
 

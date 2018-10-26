@@ -55,14 +55,14 @@ func (self *KeySetSealer) DecodeToKeySet(keystring string) (*KeySetSealer, error
 
 func (self *KeySetSealer) GetPaymentAddress() (privacy.PaymentAddress, error) {
 	var paymentAddr privacy.PaymentAddress
-	paymentAddr.PubKey = self.SpendingAddress
+	paymentAddr.PublicKey = self.SpendingAddress
 	paymentAddr.TransmissionKey = self.TransmissionKey
 	return paymentAddr, nil
 }
 
 func (self *KeySetSealer) GetViewingKey() (privacy.ViewingKey, error) {
 	var viewingKey privacy.ViewingKey
-	viewingKey.PubKey = self.SpendingAddress
+	viewingKey.PublicKey = self.SpendingAddress
 	viewingKey.ReceivingKey = self.ReceivingKey
 	return viewingKey, nil
 }*/

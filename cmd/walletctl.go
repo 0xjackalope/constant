@@ -81,6 +81,6 @@ func generateDummyPrivateKey() {
 	for _, account := range walletObj.MasterAccount.Child {
 		log.Printf("\n\n")
 		log.Printf("%s private key:%s\n", account.Name, account.Key.Base58CheckSerialize(wallet.PriKeyType))
-		log.Printf("%s pubkey address(base58check.encode): %s\n", account.Name, base58.Base58Check{}.Encode(account.Key.KeySet.PaymentAddress.PubKey, byte(0x00)))
+		log.Printf("%s pubkey address(base58check.encode): %s\n", account.Name, base58.Base58Check{}.Encode(account.Key.KeySet.PaymentAddress.PublicKey, byte(0x00)))
 	}
 }

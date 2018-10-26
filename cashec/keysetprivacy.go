@@ -48,7 +48,7 @@ Generate Sealer keyset from privacy key set
 /*func (self *KeySet) CreateSealerKeySet() (*KeySetSealer, error) {
 	var sealerKeySet KeySetSealer
 	sealerKeySet.GenerateKey(self.PrivateKey[:])
-	sealerKeySet.SpendingAddress = self.PaymentAddress.PubKey
+	sealerKeySet.SpendingAddress = self.PaymentAddress.PublicKey
 	sealerKeySet.TransmissionKey = self.PaymentAddress.TransmissionKey
 	sealerKeySet.ReceivingKey = self.ReadonlyKey.ReceivingKey
 	return &sealerKeySet, nil
@@ -57,7 +57,7 @@ Generate Sealer keyset from privacy key set
 func (self *KeySet) Verify(data, signature []byte) (bool, error) {
 	isValid := false
 	hash := common.HashB(data)
-	isValid = privacy.Verify(signature, hash[:], self.PaymentAddress.PubKey)
+	isValid = privacy.Verify(signature, hash[:], self.PaymentAddress.PublicKey)
 	return isValid, nil
 }
 
@@ -95,7 +95,7 @@ func ValidateDataB58(pubkey string, sig string, data []byte) error {
 	}
 
 	validatorKp := KeySet{}
-	validatorKp.PaymentAddress.PubKey = decPubkey
+	validatorKp.PaymentAddress.PublicKey = decPubkey
 	decSig, _, err := base58.Base58Check{}.Decode(sig)
 	if err != nil {
 		return errors.New("can't decode signature: " + err.Error())

@@ -714,7 +714,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 									copyDesc.AppendNote(note)
 									note.Cm = candidateCommitment
 
-									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PubKey
+									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PublicKey
 									copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 								} else {
 									continue
@@ -740,7 +740,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								}
 								copyDesc.AppendNote(note)
 								note.Cm = candidateCommitment
-								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PubKey
+								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PublicKey
 								copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 							}
 						}

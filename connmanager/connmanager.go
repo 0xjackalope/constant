@@ -324,7 +324,7 @@ listen:
 				var publicKey string
 
 				if listener.Config.SealerKeySet != nil {
-					publicKey = base58.Base58Check{}.Encode(listener.Config.SealerKeySet.PaymentAddress.PubKey, byte(0x00))
+					publicKey = base58.Base58Check{}.Encode(listener.Config.SealerKeySet.PaymentAddress.PublicKey, byte(0x00))
 				}
 
 				// remove later

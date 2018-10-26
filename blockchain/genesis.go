@@ -67,8 +67,8 @@ func (self GenesisBlockGenerator) createGenesisTx(initialCoin uint64, initialAdd
 	if err != nil {
 		return nil, err
 	}
-	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PaymentAddress.PubKey}
-	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PaymentAddress.PubKey}
+	outNote := &client.Note{Value: initialCoin, Apk: key.KeySet.PaymentAddress.PublicKey}
+	placeHolderOutputNote := &client.Note{Value: 0, Apk: key.KeySet.PaymentAddress.PublicKey}
 
 	fmt.Printf("EncKey: %x\n", key.KeySet.PaymentAddress.TransmissionKey)
 

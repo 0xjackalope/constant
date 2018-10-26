@@ -25,7 +25,7 @@ var (
 	logRotator *rotator.Rotator
 
 	backendLog        = common.NewBackend(logWriter{})
-	addrManagerLoger  = backendLog.Logger("PubKey Log")
+	addrManagerLoger  = backendLog.Logger("PublicKey Log")
 	connManagerLogger = backendLog.Logger("Connection Manager Log")
 	mainLogger        = backendLog.Logger("Server Log")
 	rpcLogger         = backendLog.Logger("RPC Log")
