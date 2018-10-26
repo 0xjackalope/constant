@@ -55,7 +55,7 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 	pointToChecked.X, pointToChecked.Y = Curve.Double(res.X, res.Y)
 
 	if pointToChecked.X == nil || pointToChecked.Y == nil {
-		fmt.Errorf("Point at infinity")
+		//fmt.Errorf("Point at infinity")
 		return *new(EllipticPoint)
 	}
 	return *res
@@ -102,7 +102,6 @@ func (com *CommitmentParams) Params() *CommitmentParams {
 
 // InitCommitment initial
 func (com *CommitmentParams) InitCommitment() {
-	// TODO: how to generate generators independently
 	fmt.Println(Curve.Params().Gx, "___", Curve.Params().Gy)
 	com.G[0] = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
 	for i := 1; i < 4; i++{
