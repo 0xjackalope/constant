@@ -19,6 +19,7 @@ import (
 	"github.com/ninjadotorg/cash/wire"
 	"golang.org/x/crypto/ed25519"
 	"github.com/ninjadotorg/cash/privacy"
+	"github.com/ninjadotorg/cash/common/base58"
 )
 
 type commandHandler func(RpcServer, interface{}, <-chan struct{}) (interface{}, error)
@@ -1337,22 +1338,17 @@ func (self RpcServer) handleSetTxFee(params interface{}, closeChan <-chan struct
 	return err == nil, NewRPCError(ErrUnexpected, err)
 }
 
-/*func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
+func (self RpcServer) handleCreateSealerKeySet(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender
 	senderKey, err := wallet.Base58CheckDeserialize(params.(string))
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	sealerKeySet, err := senderKey.KeySet.CreateSealerKeySet()
-	if err != nil {
-		return nil, NewRPCError(ErrUnexpected, err)
-	}
 	result := make(map[string]string)
-	result["SealerKeySet"] = sealerKeySet.EncodeToString()
-	result["SealerPublicKey"] = base58.Base58Check{}.Encode(sealerKeySet.SpublicKey, byte(0x00))
+	result["SealerPublicKey"] = base58.Base58Check{}.Encode(senderKey.KeySet.PublicKey.Address, byte(0x00))
 	return result, nil
-}*/
+}
 
 func (self RpcServer) handleGetCommiteeCandidateList(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	// param #1: private key of sender
