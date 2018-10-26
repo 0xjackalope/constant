@@ -18,19 +18,19 @@ import (
 
 // }
 
-//ZkpPedersenCM contains proof's value
-type ZkpPedersenCM struct {
+//ZkpPedersenCMProof contains proof's value
+type ZkpPedersenCMProof struct {
 	Alpha, Beta, GammaAddr, GammaValue, GammaSN, GammaR []byte
 }
 
 //ZkpPedersenCMProve create zero knowledge proof for an opening of a Pedersen commitment
-func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, value []byte) *ZkpPedersenCM {
-	zkp := new(ZkpPedersenCM)
+func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, value []byte) *ZkpPedersenCMProof {
+	zkp := new(ZkpPedersenCMProof)
 	return zkp
 }
 
 //ZkpPedersenCMVerify check the proof's value
-func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCM, commitmentsvalue []byte) bool {
+func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCMProof, commitmentsvalue []byte) bool {
 
 	plainBeta := append(CompressKey(cm.G0), CompressKey(cm.G1)...)
 	plainBeta = append(plainBeta, CompressKey(cm.G2)...)

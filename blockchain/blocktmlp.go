@@ -64,6 +64,7 @@ func (blockgen *BlkTmplGenerator) NewBlockTemplate(payToAddress privacy.PaymentA
 			continue
 		case common.TxVotingType:
 			txFee = tx.(*transaction.TxVoting).Fee
+		case common.TxSalaryType:
 		case common.TxNormalType:
 			txFee = tx.(*transaction.Tx).Fee
 		}
