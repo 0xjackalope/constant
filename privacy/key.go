@@ -22,7 +22,7 @@ var Curve = elliptic.P256()
 // 		curve = (elliptic.Curve*)&elliptic.P256()
 // 	})
 
-// 	fmt.Printf("PublicKey curve: %v\n", &curve)
+// 	fmt.Printf("Pk curve: %v\n", &curve)
 // 	return &curve
 // }
 
@@ -48,13 +48,13 @@ const (
 // SpendingKey 32 bytes
 type SpendingKey []byte
 
-// PublicKey 32 bytes
+// Pk 32 bytes
 type PublicKey []byte
 
-// ReceivingKey 32 bytes
+// Rk 32 bytes
 type ReceivingKey []byte
 
-// TransmissionKey 33 bytes
+// Tk 33 bytes
 type TransmissionKey []byte
 
 // EllipticPoint represents an point of ellipctic
@@ -64,14 +64,14 @@ type EllipticPoint struct {
 
 // ViewingKey represents an key that be used to view transactions
 type ViewingKey struct {
-	PublicKey    []byte // 33 bytes, use to receive coin
-	ReceivingKey []byte // 32 bytes, use to decrypt pointByte
+	Pk PublicKey 	// 33 bytes, use to receive coin
+	Rk ReceivingKey // 32 bytes, use to decrypt pointByte
 }
 
 // PaymentAddress represents an payment address of receiver
 type PaymentAddress struct {
-	PublicKey       []byte // 33 bytes, use to receive coin
-	TransmissionKey []byte // 33 bytes, use to encrypt pointByte
+	Pk PublicKey 		// 33 bytes, use to receive coin
+	Tk TransmissionKey 	// 33 bytes, use to encrypt pointByte
 }
 
 type PaymentInfo struct {
@@ -92,7 +92,7 @@ func RandBytes(n int) []byte {
 
 // GenerateSpendingKey generates a random SpendingKey
 // SpendingKey: 32 bytes
-func GenerateSpendingKey(seed []byte) []byte {
+func GenerateSpendingKey(seed []byte) SpendingKey {
 	temp := new(big.Int)
 	spendingKey := make([]byte, 32)
 	spendingKey = common.HashB(seed)
@@ -104,8 +104,8 @@ func GenerateSpendingKey(seed []byte) []byte {
 }
 
 // GenerateAddress computes an address corresponding with spendingKey
-// PublicKey : 33 bytes
-func GenerateAddress(spendingKey []byte) []byte {
+// Pk : 33 bytes
+func GenerateAddress(spendingKey []byte) PublicKey {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
 	fmt.Printf("p.X: %v\n", p.X)
@@ -116,8 +116,8 @@ func GenerateAddress(spendingKey []byte) []byte {
 }
 
 // GenerateReceivingKey computes a receiving key corresponding with spendingKey
-// ReceivingKey : 32 bytes
-func GenerateReceivingKey(spendingKey []byte) []byte {
+// Rk : 32 bytes
+func GenerateReceivingKey(spendingKey []byte) ReceivingKey {
 	hash := sha256.Sum256(spendingKey)
 	receivingKey := make([]byte, 32)
 	copy(receivingKey, hash[:])
@@ -125,8 +125,8 @@ func GenerateReceivingKey(spendingKey []byte) []byte {
 }
 
 // GenerateTransmissionKey computes a transmission key corresponding with receivingKey
-// TransmissionKey : 33 bytes
-func GenerateTransmissionKey(receivingKey []byte) []byte {
+// Tk : 33 bytes
+func GenerateTransmissionKey(receivingKey []byte) TransmissionKey {
 	var p, generator EllipticPoint
 	random := RandBytes(256)
 	//create new generator from base generator
@@ -142,16 +142,16 @@ func GenerateTransmissionKey(receivingKey []byte) []byte {
 // GenerateViewingKey generates a viewingKey corressponding with spendingKey
 func GenerateViewingKey(spendingKey []byte) ViewingKey {
 	var viewingKey ViewingKey
-	viewingKey.PublicKey = GenerateAddress(spendingKey)
-	viewingKey.ReceivingKey = GenerateReceivingKey(spendingKey)
+	viewingKey.Pk = GenerateAddress(spendingKey)
+	viewingKey.Rk = GenerateReceivingKey(spendingKey)
 	return viewingKey
 }
 
 // GeneratePaymentAddress generates a payment address corressponding with spendingKey
 func GeneratePaymentAddress(spendingKey []byte) PaymentAddress {
 	var paymentAddress PaymentAddress
-	paymentAddress.PublicKey = GenerateAddress(spendingKey)
-	paymentAddress.TransmissionKey = GenerateTransmissionKey(GenerateReceivingKey(spendingKey))
+	paymentAddress.Pk = GenerateAddress(spendingKey)
+	paymentAddress.Tk = GenerateTransmissionKey(GenerateReceivingKey(spendingKey))
 	return paymentAddress
 }
 

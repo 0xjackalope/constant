@@ -17,7 +17,7 @@ func (self *Engine) OnRequestSign(msgBlock *wire.MessageRequestBlockSign) {
 			Reason:    err.Error(),
 			BlockHash: block.Hash().String(),
 			ChainID:   block.Header.ChainID,
-			Validator: base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PublicKey, byte(0x00)),
+			Validator: base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00)),
 		}
 		dataByte, _ := invalidBlockMsg.JsonSerialize()
 		invalidBlockMsg.ValidatorSig, err = self.signData(dataByte)
@@ -42,7 +42,7 @@ func (self *Engine) OnRequestSign(msgBlock *wire.MessageRequestBlockSign) {
 	}
 	blockSigMsg := wire.MessageBlockSig{
 		BlockHash:    block.Hash().String(),
-		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PublicKey, byte(0x00)),
+		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00)),
 		ValidatorSig: sig,
 	}
 	peerID, err := peer2.IDB58Decode(msgBlock.SenderID)
@@ -152,7 +152,7 @@ func (self *Engine) sendBlockMsg(block *blockchain.Block) {
 func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	Logger.log.Info("Received a MessageRequestSwap")
 
-	senderID := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PublicKey, byte(0x00))
+	senderID := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
 
 	rawBytes := []byte{}
 	rawBytes = append(rawBytes, []byte(msg.RequesterPbk)...)
@@ -167,7 +167,7 @@ func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	messageSigMsg := wire.MessageSignSwap{
 		SenderID:     senderID,
 		RequesterPbk: msg.RequesterPbk,
-		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.PublicKey, byte(0x00)),
+		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00)),
 		ValidatorSig: sig,
 	}
 	peerID, err := peer2.IDB58Decode(msg.SenderID)

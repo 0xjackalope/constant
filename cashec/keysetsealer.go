@@ -4,8 +4,8 @@ package cashec
 	SprivateKey     []byte
 	SpublicKey      []byte
 	SpendingAddress []byte
-	TransmissionKey []byte
-	ReceivingKey    []byte
+	Tk []byte
+	Rk    []byte
 }
 
 func (self *KeySetSealer) GenerateKey(seed []byte) (*KeySetSealer, error) {
@@ -55,15 +55,15 @@ func (self *KeySetSealer) DecodeToKeySet(keystring string) (*KeySetSealer, error
 
 func (self *KeySetSealer) GetPaymentAddress() (privacy.PaymentAddress, error) {
 	var paymentAddr privacy.PaymentAddress
-	paymentAddr.PublicKey = self.SpendingAddress
-	paymentAddr.TransmissionKey = self.TransmissionKey
+	paymentAddr.Pk = self.SpendingAddress
+	paymentAddr.Tk = self.Tk
 	return paymentAddr, nil
 }
 
 func (self *KeySetSealer) GetViewingKey() (privacy.ViewingKey, error) {
 	var viewingKey privacy.ViewingKey
-	viewingKey.PublicKey = self.SpendingAddress
-	viewingKey.ReceivingKey = self.ReceivingKey
+	viewingKey.Pk = self.SpendingAddress
+	viewingKey.Rk = self.Rk
 	return viewingKey, nil
 }*/
 

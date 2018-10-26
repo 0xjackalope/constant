@@ -104,7 +104,7 @@ func (com *CommitmentParams) InitCommitment() {
 }
 
 // Commit commits a preoud random number and 3 attributes of coin
-func (com *CommitmentParams) Commit(prdnum, address, value, serialNumber []byte) []byte {
+func (com *CommitmentParams) Commit(prdnum []byte, address PublicKey, value []byte, serialNumber SerialNumber) []byte {
 	var res []byte
 	// TODO: using Pedersen commitment
 	//var commitRPoint EllipticPoint

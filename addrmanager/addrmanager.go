@@ -222,12 +222,12 @@ func (self *AddrManager) Start() {
 // Stop gracefully shuts down the address manager by stopping the main handler.
 func (self *AddrManager) Stop() error {
 	if atomic.AddInt32(&self.shutdown, 1) != 1 {
-		Logger.log.Infof("PublicKey manager is already in the process of " +
+		Logger.log.Infof("Pk manager is already in the process of " +
 			"shutting down")
 		return nil
 	}
 
-	Logger.log.Infof("PublicKey manager shutting down")
+	Logger.log.Infof("Pk manager shutting down")
 	close(self.quit)
 	self.waitgroup.Wait()
 	return nil
@@ -250,7 +250,7 @@ out:
 	}
 	self.savePeers()
 	self.waitgroup.Done()
-	Logger.log.Infof("PublicKey handler done")
+	Logger.log.Infof("Pk handler done")
 }
 
 // Good marks the given address as good.  To be called after a successful

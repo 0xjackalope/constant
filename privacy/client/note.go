@@ -262,7 +262,7 @@ func TestEncrypt() {
 	pkenc := GenTransmissionKey(skenc)
 
 	pkencs := [2]TransmissionKey{pkenc, pkenc}
-	// skencs := [2]ReceivingKey{skenc, skenc}
+	// skencs := [2]Rk{skenc, skenc}
 
 	//Gen ephemeral key
 	epk, esk := GenEphemeralKey()

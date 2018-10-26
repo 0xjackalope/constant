@@ -557,8 +557,8 @@ func (self *BlockChain) GetListTxByReadonlyKey(keySet *cashec.KeySet, coinType s
 								note := new(client.Note)
 								var skenc client.ReceivingKey
 								var pkenc client.TransmissionKey
-								copy(skenc[:], keySet.ReadonlyKey.ReceivingKey[:])
-								copy(pkenc[:], keySet.PaymentAddress.TransmissionKey[:])
+								copy(skenc[:], keySet.ReadonlyKey.Rk[:])
+								copy(pkenc[:], keySet.PaymentAddress.Tk[:])
 								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								spew.Dump(note)
 								if err == nil && note != nil {
@@ -688,8 +688,8 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								note := new(client.Note)
 								var skenc client.ReceivingKey
 								var pkenc client.TransmissionKey
-								copy(skenc[:], keys.ReadonlyKey.ReceivingKey[:])
-								copy(pkenc[:], keys.PaymentAddress.TransmissionKey[:])
+								copy(skenc[:], keys.ReadonlyKey.Rk[:])
+								copy(pkenc[:], keys.PaymentAddress.Tk[:])
 								note, err := client.DecryptNote(encData, skenc, pkenc, epk, hSig)
 								if err == nil && note != nil && note.Value > 0 {
 									// can decrypt data -> got candidate commitment
@@ -714,7 +714,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 									copyDesc.AppendNote(note)
 									note.Cm = candidateCommitment
 
-									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PublicKey
+									note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).Pk
 									copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 								} else {
 									continue
@@ -740,7 +740,7 @@ func (self *BlockChain) GetListTxByPrivateKey(privateKey *privacy.SpendingKey, c
 								}
 								copyDesc.AppendNote(note)
 								note.Cm = candidateCommitment
-								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).PublicKey
+								note.Apk = privacy.GeneratePaymentAddress(keys.PrivateKey).Pk
 								copyDesc.Commitments = append(copyDesc.Commitments, candidateCommitment)
 							}
 						}

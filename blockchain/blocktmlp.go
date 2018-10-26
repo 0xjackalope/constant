@@ -244,12 +244,12 @@ func createSalaryTx(
 
 	// Create new notes: first one is salary UTXO, second one has 0 value
 	var temp []byte
-	copy(temp, receiverAddr.PublicKey[:])
+	copy(temp, receiverAddr.Pk[:])
 	outNote := &client.Note{Value: salary, Apk: temp}
 	placeHolderOutputNote := &client.Note{Value: 0, Apk: temp}
 
 	var temp2 client.TransmissionKey
-	copy(temp2[:], receiverAddr.TransmissionKey[:])
+	copy(temp2[:], receiverAddr.Tk[:])
 	outputs := []*client.JSOutput{&client.JSOutput{}, &client.JSOutput{}}
 	outputs[0].EncKey = temp2
 	outputs[0].OutputNote = outNote
