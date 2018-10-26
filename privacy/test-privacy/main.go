@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/ninjadotorg/cash/privacy"
-	"github.com/ninjadotorg/cash/transaction"
 )
+
+type SerialNumber []byte
+type Commitment []byte
+
+func PrintfXXX(a SerialNumber) {
+	fmt.Println(a)
+}
 
 func main() {
 
@@ -55,13 +59,16 @@ func main() {
 	// valid := privacy.Verify(signature, hash[:], address)
 	// fmt.Println("\nsignature verified:", valid)
 
-	tx, _ := transaction.CreateEmptyTx()
-	fmt.Printf("Transaction: %+v\n", tx)
+	// tx, _ := transaction.CreateEmptyTx()
+	// fmt.Printf("Transaction: %+v\n", tx)
 
-	a := "aaaaaaaaaaaaaaaaa"
+	// a := "aaaaaaaaaaaaaaaaa"
 
-	//var b privacy.Commitment
-	var xx privacy.CommitmentParams
-	xx.InitCommitment()
-	fmt.Println(xx.Commit([]byte(a), []byte(a), []byte(a), []byte(a)))
+	// //var b privacy.Commitment
+	// var xx privacy.CommitmentParams
+	// xx.InitCommitment()
+	// fmt.Println(xx.Commit([]byte(a), []byte(a), []byte(a), []byte(a)))
+
+	var abc []byte
+	PrintfXXX(abc)
 }

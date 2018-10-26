@@ -48,6 +48,15 @@ const (
 // SpendingKey 32 bytes
 type SpendingKey []byte
 
+// PublicKey 32 bytes
+type PublicKey []byte
+
+// ReceivingKey 32 bytes
+type ReceivingKey []byte
+
+// TransmissionKey 33 bytes
+type TransmissionKey []byte
+
 // EllipticPoint represents an point of ellipctic
 type EllipticPoint struct {
 	X, Y *big.Int

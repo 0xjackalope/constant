@@ -1,11 +1,12 @@
 package cashec
 
 import (
-	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/privacy"
 	"encoding/json"
-	"github.com/ninjadotorg/cash/common/base58"
 	"errors"
+
+	"github.com/ninjadotorg/cash/common"
+	"github.com/ninjadotorg/cash/common/base58"
+	"github.com/ninjadotorg/cash/privacy"
 )
 
 type KeySet struct {
