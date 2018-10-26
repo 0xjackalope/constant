@@ -12,12 +12,18 @@ package privacy
 
 // }
 
+//ZkpPedersenCM contains proof's value
 type ZkpPedersenCM struct {
-	Gamma1, Gamma2 []byte
+	Alpha, Beta, GammaAddr, GammaValue, GammaSN, GammaR []byte
 }
 
-// ZkpPedersenCMComponent create zero knowledge proof for an opening of a Pedersen commitment
-func ZkpPedersenCMComponent(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, value []byte) *ZkpPedersenCM{
+//ZkpPedersenCMProve create zero knowledge proof for an opening of a Pedersen commitment
+func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, value []byte) *ZkpPedersenCM {
 	zkp := new(ZkpPedersenCM)
 	return zkp
+}
+
+//ZkpPedersenCMVerify check the proof's value
+func ZkpPedersenCMVerify(proofsvalue ZkpPedersenCM, commintmentsvalue []byte) bool {
+	return true
 }
