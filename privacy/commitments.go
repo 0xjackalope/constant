@@ -1,6 +1,7 @@
 package privacy
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -19,8 +20,14 @@ type Commitment interface {
 
 // CommitmentParams represents the parameters for the commitment
 type CommitmentParams struct {
-	G0, G1, G2, H EllipticPoint // generator
+	G [4]EllipticPoint // generators
+	// G[0]: public key
+	// G[1]: Value
+	// G[2]: SerialNumber
+	// G[3]: Random
 }
+
+
 
 // Cm is a global variable, it is initialized only one time
 // var Cm Commitment
@@ -97,83 +104,51 @@ func (com *CommitmentParams) Params() *CommitmentParams {
 func (com *CommitmentParams) InitCommitment() {
 	// TODO: how to generate generators independently
 	fmt.Println(Curve.Params().Gx, "___", Curve.Params().Gy)
-	com.G0 = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
-	com.G1 = hashGenerator(com.G0)
-	com.G2 = hashGenerator(com.G1)
-	com.H = hashGenerator(com.G2)
+	com.G[0] = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
+	for i := 1; i < 4; i++{
+		 com.G[i] = hashGenerator(com.G[i-1])
+	}
 }
 
-// Commit commits a preoud random number and 3 attributes of coin
-func (com *CommitmentParams) Commit(prdnum []byte, address PublicKey, value []byte, serialNumber SerialNumber) []byte {
-	var res []byte
-	// TODO: using Pedersen commitment
-	//var commitRPoint EllipticPoint
-	/*fmt.Print(Curve.IsOnCurve(com.G0.X, com.G0.Y))
-	fmt.Print("__")
-	fmt.Print(com.G0.X)
-	fmt.Print("__")
-	fmt.Println(com.G0.Y)
-	fmt.Print(Curve.IsOnCurve(com.G1.X, com.G1.Y))
-	fmt.Print("__")
-	fmt.Print(com.G1.X)
-	fmt.Print("__")
-	fmt.Println(com.G1.Y)
-	fmt.Print(Curve.IsOnCurve(com.G2.X, com.G2.Y))
-	fmt.Print("__")
-	fmt.Print(com.G2.X)
-	fmt.Print("__")
-	fmt.Println(com.G2.Y)
-	fmt.Print(Curve.IsOnCurve(com.H.X, com.H.Y))
-	fmt.Print("__")
-	fmt.Print(com.H.X)
-	fmt.Print("__")
-	fmt.Println(com.H.Y) //*/
+// Commit commits a preoud random number and any attributes of coin
+func (com *CommitmentParams) Commit(values map[string][]byte) ([]byte, error){
 
-	commx, commy := Curve.ScalarMult(com.H.X, com.H.Y, prdnum)
-	commxtemp, commytemp := Curve.ScalarMult(com.G0.X, com.G0.Y, address)
-	commx, commy = Curve.Add(commx, commy, commxtemp, commytemp)
-	commxtemp, commytemp = Curve.ScalarMult(com.G1.X, com.G1.Y, value)
-	commx, commy = Curve.Add(commx, commy, commxtemp, commytemp)
-	commxtemp, commytemp = Curve.ScalarMult(com.G2.X, com.G2.Y, serialNumber)
-	commx, commy = Curve.Add(commx, commy, commxtemp, commytemp)
-
-	// TODO: convert result from Elliptic to bytes array
-	var resPoint EllipticPoint
-	resPoint.X = commx
-	resPoint.Y = commy
-	res = CompressKey(resPoint)
-	return res
-}
-
-/*
-
-func HashGenerator(g EllipticPoint) EllipticPoint {
-	// TODO: res.X = hash(g.X), res.Y = sqrt(res.X^3 - 3X + B)
-	res := new (EllipticPoint)
-	res.X = big.NewInt(rand.Int63());
-	res.Y = big.NewInt(rand.Int63());
-	i := 0;
-	for !Curve.IsOnCurve(res.X, res.Y) {
-		if i==0 {
-			*res.X = *g.X;
-			*res.Y = *g.Y;
-		}
-		var h = sha256.New()
-		h.Write(res.X.Bytes())
-		res.X = new(big.Int).SetBytes(h.Sum(nil));
-		res.X.Mod(res.X, Curve.Params().P);
-		temp := ComputeYCoord(res.X);
-		if temp != nil {
-			res.Y = temp;
-		}
-		//fmt.Println(res.X);
-		//fmt.Println("Loop:",i);
-		//fmt.Println("X = ",res.X);
-		//fmt.Println("Y = ",res.Y);
-		i++;
+	if len(values) > 4{
+		return nil, errors.New("len of values to commit must less than or equal 4")
 	}
 
-	return *res
+	var point, commitment EllipticPoint
+	fmt.Printf("commitment.X: %+v\n", commitment.X)
+	fmt.Printf("commitment.Y: %+v\n", commitment.Y)
+
+	i := 0
+	for value := range values {
+		switch value {
+		case "pk":
+			point.X, point.Y = Curve.ScalarMult(com.G[0].X, com.G[0].Y, values["pk"])
+		case "v":
+			point.X, point.Y = Curve.ScalarMult(com.G[1].X, com.G[1].Y, values[""])
+		case "sn":
+			point.X, point.Y = Curve.ScalarMult(com.G[2].X, com.G[2].Y, values["sn"])
+		case "r":
+			point.X, point.Y = Curve.ScalarMult(com.G[3].X, com.G[3].Y, values["r"])
+		}
+		if i == 0 {
+			commitment.X = point.X
+			commitment.Y = point.Y
+			//fmt.Printf("point.X: %+v\n", point.X)
+			//fmt.Printf("point.Y: %+v\n", point.Y)
+			//fmt.Printf("commitment.X: %+v\n", commitment.X)
+			//fmt.Printf("commitment.Y: %+v\n", commitment.Y)
+		} else{
+			commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, point.X, point.Y)
+		}
+		i++
+	}
+
+	// convert result from Elliptic to bytes array
+	res := CompressKey(commitment)
+	return res, nil
 }
 
-*/
+

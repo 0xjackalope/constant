@@ -1,6 +1,9 @@
 package main
 
-
+import (
+	"fmt"
+	"github.com/ninjadotorg/cash/privacy"
+)
 
 func main() {
 
@@ -53,11 +56,34 @@ func main() {
 	//tx, _ := transaction.CreateEmptyTxs()
 	//fmt.Printf("Transaction: %+v\n", tx)
 
-	// a := "aaaaaaaaaaaaaaaaa"
+	//a := "aaaaaaaaaaaaaaaaa"
 
 	// //var b privacy.Commitment
-	// var xx privacy.CommitmentParams
-	// xx.InitCommitment()
-	// fmt.Println(xx.Commit([]byte(a), []byte(a), []byte(a), []byte(a)))
+	var xx privacy.CommitmentParams
+	xx.InitCommitment()
 
+	var sn privacy.SerialNumber
+	var v privacy.Value
+	sn = []byte("aaaaaaa")
+	v = []byte("bbbbbbb")
+
+	m := make(map[string][]byte)
+
+	//m["sn"] = sn
+	//m["v"] = v
+	m = map[string][]byte{
+		"sn": sn,
+		"v": v,
+	}
+	fmt.Printf("m['sn']: %+v\n", m["sn"])
+	fmt.Printf("m['v']: %+v\n", m["v"])
+
+
+
+
+	//for i:=0;i<4;i++{
+	//	values[i] = make([]byte, len(a))
+	//	values[i] = []byte(a)
+	//}
+	fmt.Println(xx.Commit(m))
 }
