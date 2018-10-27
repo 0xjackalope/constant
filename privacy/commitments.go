@@ -117,8 +117,8 @@ func (com *CommitmentParams) Commit(values map[string][]byte) ([]byte, error){
 	}
 
 	var point, commitment EllipticPoint
-	fmt.Printf("commitment.X: %+v\n", commitment.X)
-	fmt.Printf("commitment.Y: %+v\n", commitment.Y)
+	//fmt.Printf("commitment.X: %+v\n", commitment.X)
+	//fmt.Printf("commitment.Y: %+v\n", commitment.Y)
 
 	i := 0
 	for value := range values {
@@ -135,10 +135,6 @@ func (com *CommitmentParams) Commit(values map[string][]byte) ([]byte, error){
 		if i == 0 {
 			commitment.X = point.X
 			commitment.Y = point.Y
-			//fmt.Printf("point.X: %+v\n", point.X)
-			//fmt.Printf("point.Y: %+v\n", point.Y)
-			//fmt.Printf("commitment.X: %+v\n", commitment.X)
-			//fmt.Printf("commitment.Y: %+v\n", commitment.Y)
 		} else{
 			commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, point.X, point.Y)
 		}

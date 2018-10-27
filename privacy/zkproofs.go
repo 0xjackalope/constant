@@ -31,19 +31,19 @@ func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, 
 	alpha := new(EllipticPoint)
 	tmp := new(EllipticPoint)
 	//
-	alpha.X, alpha.Y = Curve.ScalarMult(cm.G0.X, cm.G0.Y, r0)
-	tmp.X, tmp.Y = Curve.ScalarMult(cm.G1.X, cm.G1.Y, r1)
+	alpha.X, alpha.Y = Curve.ScalarMult(cm.G[0].X, cm.G[0].Y, r0)
+	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[1].X, cm.G[1].Y, r1)
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(cm.G2.X, cm.G2.Y, r2)
+	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[2].X, cm.G[2].Y, r2)
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(cm.H.X, cm.H.Y, r3)
+	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[3].X, cm.G[3].Y, r3)
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
 	copy(zkp.Alpha, CompressKey(*alpha))
 	//
 	hashFunc := blake2b.New256()
-	appendStr := append(CompressKey(cm.G0), CompressKey(cm.G1)...)
-	appendStr = append(appendStr, CompressKey(cm.G2)...)
-	appendStr = append(appendStr, CompressKey(cm.H)...)
+	appendStr := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
+	appendStr = append(appendStr, CompressKey(cm.G[2])...)
+	appendStr = append(appendStr, CompressKey(cm.G[3])...)
 	appendStr = append(appendStr, cmRnd...)
 	appendStr = append(appendStr, CompressKey(*alpha)...)
 	beta := hashFunc.Sum(appendStr)
@@ -84,9 +84,9 @@ func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, 
 //ZkpPedersenCMVerify check the proof's value
 func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCMProof, commitmentsvalue []byte) bool {
 
-	plainBeta := append(CompressKey(cm.G0), CompressKey(cm.G1)...)
-	plainBeta = append(plainBeta, CompressKey(cm.G2)...)
-	plainBeta = append(plainBeta, CompressKey(cm.H)...)
+	plainBeta := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
+	plainBeta = append(plainBeta, CompressKey(cm.G[2])...)
+	plainBeta = append(plainBeta, CompressKey(cm.G[3])...)
 	plainBeta = append(plainBeta, commitmentsvalue...)
 	plainBeta = append(plainBeta, proofsvalue.Alpha...)
 
@@ -95,10 +95,10 @@ func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCMProof, co
 
 	Beta := hashMachine.Sum(nil)
 
-	xH, yH := Curve.ScalarMult(cm.H.X, cm.H.Y, proofsvalue.GammaR)
-	xG0, yG0 := Curve.ScalarMult(cm.G0.X, cm.G0.Y, proofsvalue.GammaAddr)
-	xG1, yG1 := Curve.ScalarMult(cm.G1.X, cm.G1.Y, proofsvalue.GammaValue)
-	xG2, yG2 := Curve.ScalarMult(cm.G2.X, cm.G2.Y, proofsvalue.GammaSN)
+	xH, yH := Curve.ScalarMult(cm.G[3].X, cm.G[3].Y, proofsvalue.GammaR)
+	xG0, yG0 := Curve.ScalarMult(cm.G[0].X, cm.G[0].Y, proofsvalue.GammaAddr)
+	xG1, yG1 := Curve.ScalarMult(cm.G[1].X, cm.G[1].Y, proofsvalue.GammaValue)
+	xG2, yG2 := Curve.ScalarMult(cm.G[2].X, cm.G[2].Y, proofsvalue.GammaSN)
 
 	xRight, yRight := Curve.Add(xH, yH, xG0, yG0)
 	xRight, yRight = Curve.Add(xRight, yRight, xG1, yG1)
