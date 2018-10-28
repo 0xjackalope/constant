@@ -2,11 +2,8 @@ package privacy
 
 import (
 	"fmt"
-	"math/big"
-	"math/rand"
-	"time"
-
 	"github.com/minio/blake2b-simd"
+	"math/big"
 )
 
 // ZkpPedersenCMProof contains proof's value
@@ -22,9 +19,9 @@ type ZkpPedersenCMProof struct {
 //}
 
 // ZkpPedersenCMProve create zero knowledge proof for an opening of a Pedersen commitment
-func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, value, cmRnd []byte) *ZkpPedersenCMProof {
+func ZkpPedersenCMProve(cm PCParams, pubKey PublicKey, sn SerialNumber, value, cmRnd, commitmentValue []byte) *ZkpPedersenCMProof {
 	zkp := new(ZkpPedersenCMProof)
-	rand.Seed(time.Now().UTC().Unix())
+	//rand.Seed(time.Now().UTC().Unix())
 	r0 := RandBytes(32)
 	r1 := RandBytes(32)
 	r2 := RandBytes(32)
@@ -42,6 +39,9 @@ func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, 
 	zkp.Alpha = make([]byte, 33)
 	copy(zkp.Alpha, CompressKey(*alpha))
 	//fmt.Printf("Alpha: %+v\n", zkp.Alpha)
+	//Compute commitment value
+
+
 	//
 	hashFunc := blake2b.New256()
 	appendStr := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
@@ -87,7 +87,7 @@ func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, 
 
 
 //ZkpPedersenCMVerify check the proof's value
-func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCMProof, commitmentsvalue []byte) bool {
+func ZkpPedersenCMVerify(cm PCParams, proofsvalue ZkpPedersenCMProof, commitmentsvalue []byte) bool {
 
 	plainBeta := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
 	plainBeta = append(plainBeta, CompressKey(cm.G[2])...)

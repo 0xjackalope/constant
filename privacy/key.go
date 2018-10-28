@@ -4,7 +4,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -190,9 +189,8 @@ func isOdd(a *big.Int) bool {
 
 // DecompressKey decompress public key to elliptic point
 func DecompressKey(pubKeyStr []byte) (pubkey *EllipticPoint, err error) {
-
 	if len(pubKeyStr) == 0 || len(pubKeyStr) != 33 {
-		return nil, errors.New("pubkey string is wrong")
+		return nil, fmt.Errorf("pubkey string len is wrong")
 	}
 
 	format := pubKeyStr[0]
@@ -241,17 +239,15 @@ func decompressPoint(x *big.Int, ybit bool) (*big.Int, error) {
 	x3.Mod(x3, Curve.Params().P)
 
 	//check P = 3 mod 4?
-	if temp.Mod(Q, new(big.Int).SetInt64(4)).Cmp(new(big.Int).SetInt64(3)) == 0 {
-		fmt.Println("Ok!!!")
+	if temp.Mod(Q, new(big.Int).SetInt64(4)).Cmp(new(big.Int).SetInt64(3)) != 0 {
+		return nil, fmt.Errorf("parameter P must be congruent to 3 mod 4")
 	}
 
 	// Now calculate sqrt mod p of x^3 - 3*x + B
 	// This code used to do a full sqrt based on tonelli/shanks,
 	// but this was replaced by the algorithms referenced in
 	// https://bitcointalk.org/index.php?topic=162805.msg1712294#msg1712294
-
 	y := new(big.Int).Exp(x3, PAdd1Div4(Q), Q)
-	fmt.Printf("y: %X\n", y)
 
 	if ybit != isOdd(y) {
 		y.Sub(Curve.Params().P, y)
@@ -260,8 +256,6 @@ func decompressPoint(x *big.Int, ybit bool) (*big.Int, error) {
 	// Check that y is a square root of x^3  - 3*x + B.
 	y2 := new(big.Int).Mul(y, y)
 	y2.Mod(y2, Curve.Params().P)
-	fmt.Printf("y2: %X\n", y2)
-	fmt.Printf("x3: %X\n", x3)
 	if y2.Cmp(x3) != 0 {
 		return nil, fmt.Errorf("invalid square root")
 	}
@@ -279,7 +273,6 @@ func PAdd1Div4(p *big.Int) (res *big.Int) {
 	res = new(big.Int)
 	res.Add(p, new(big.Int).SetInt64(1))
 	res.Div(res, new(big.Int).SetInt64(4))
-	//fmt.Printf("res: %v\n", res)
 	return
 }
 

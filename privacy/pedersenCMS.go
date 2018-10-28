@@ -1,25 +1,23 @@
 package privacy
 
 import (
-	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/minio/blake2b-simd"
 )
 
-// Commitment represents a commitment that includes 4 generators
-type Commitment interface {
+// PedersenCommitment represents a commitment that includes 4 generators
+type PedersenCommitment interface {
 	// Params returns the parameters for the commitment
-	Params() *CommitmentParams
+	Params() *PCParams
 	// InitCommitment initialize the parameters
-	InitCommitment() *CommitmentParams
-	// Commit commits
-	Commit(prdnum, address, value, serialNumber []byte) []byte
+	InitCommitment() *PCParams
+	// CommitAll commits
+	Commit([][]byte) []byte
 }
 
-// CommitmentParams represents the parameters for the commitment
-type CommitmentParams struct {
+// PCParams represents the parameters for the commitment
+type PCParams struct {
 	G [4]EllipticPoint // generators
 	// G[0]: public key
 	// G[1]: Value
@@ -27,16 +25,19 @@ type CommitmentParams struct {
 	// G[3]: Random
 }
 
+const (
+	CM_CAPACITY = 4
+)
 
+var Pcm PCParams
 
 // Cm is a global variable, it is initialized only one time
-// var Cm Commitment
+// var Cm PedersenCommitment
 // Cm = Cm.InitCommitment()
 
 // hashGenerator create new generator from a generator using hash function
 func hashGenerator(g EllipticPoint) EllipticPoint {
-	// TODO: res.X = hash(g.X), res.Y = sqrt(res.X^3 - 3X + B)
-	// done
+	// res.X = hash(g.X), res.Y = sqrt(res.X^3 - 3X + B)
 	var res = new(EllipticPoint)
 	res.X = big.NewInt(0)
 	res.Y = big.NewInt(0)
@@ -96,54 +97,52 @@ func ComputeYCoord(x *big.Int) *big.Int {
 }
 
 // Params return the parameters of commitment
-func (com *CommitmentParams) Params() *CommitmentParams {
+func (com *PCParams) Params() *PCParams {
 	return com
 }
 
 // InitCommitment initial
-func (com *CommitmentParams) InitCommitment() {
-	fmt.Println(Curve.Params().Gx, "___", Curve.Params().Gy)
+func (com *PCParams) InitCommitment() {
+
+	// G0 is the base point of curve P256
+	// G1 is the G0's hash
+	// G2 is the G1's hash
+	// G3 is the G2's hash
+	//com.G[0] = EllipticPoint{new(big.Int).SetBytes(107 23 209 242 225 44 66 71 248 188 230 229 99 164 64 242 119 3 125 129 45 235 51 160 244 161 57 69 216 152 194 150)}
+	//com.G[1] = EllipticPoint{big.NewInt(23958808978146169065002618177085267768449753078050893909214942889381335385516),
+	//						big.NewInt(7683342728189100387735055495645379680280002577849876913406403613392655773246)}
+	//com.G[2] = EllipticPoint{big.NewInt(3815079413196168640531957554999832314172554264133353679019997712191027719881),
+	//						big.NewInt(77272455227631396963147866972129356047185376243416151568214292723259718584837)}
+	//com.G[3] = EllipticPoint{big.NewInt(96857018922751703925448770729453114406629947956893140191061131561860088449600),
+	//						big.NewInt(91021963404625493633337876713358362238547713052118385945840294627046689931308)}
+
 	com.G[0] = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
-	for i := 1; i < 4; i++{
-		 com.G[i] = hashGenerator(com.G[i-1])
+	//fmt.Printf("G0.X: %#v\n", com.G[0].X.Bytes())
+	//fmt.Printf("G0.Y: %#v\n", com.G[0].Y.Bytes())
+	for i := 1; i < 4; i++ {
+		com.G[i] = hashGenerator(com.G[i-1])
+		//fmt.Printf("G%v.X: %#v\n", i, com.G[i].X.Bytes())
+		//fmt.Printf("G%v.Y: %#v\n", i, com.G[i].Y.Bytes())
 	}
+
+	//TODO: hard code parameters
 }
 
-// Commit commits a preoud random number and any attributes of coin
-func (com *CommitmentParams) Commit(values map[string][]byte) ([]byte, error){
-
-	if len(values) > 4{
-		return nil, errors.New("len of values to commit must less than or equal 4")
-	}
-
-	var point, commitment EllipticPoint
-	//fmt.Printf("commitment.X: %+v\n", commitment.X)
-	//fmt.Printf("commitment.Y: %+v\n", commitment.Y)
-
-	i := 0
-	for value := range values {
-		switch value {
-		case "pk":
-			point.X, point.Y = Curve.ScalarMult(com.G[0].X, com.G[0].Y, values["pk"])
-		case "v":
-			point.X, point.Y = Curve.ScalarMult(com.G[1].X, com.G[1].Y, values[""])
-		case "sn":
-			point.X, point.Y = Curve.ScalarMult(com.G[2].X, com.G[2].Y, values["sn"])
-		case "r":
-			point.X, point.Y = Curve.ScalarMult(com.G[3].X, com.G[3].Y, values["r"])
-		}
-		if i == 0 {
-			commitment.X = point.X
-			commitment.Y = point.Y
-		} else{
-			commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, point.X, point.Y)
-		}
-		i++
+// CommitAll commits a preoud random number and any attributes of coin
+func (com *PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
+	var commitment, temp EllipticPoint
+	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	for i := 0; i < CM_CAPACITY; i++ {
+		temp.X, temp.Y = Curve.ScalarMult(com.G[i].X, com.G[i].Y, values[i])
+		commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
 	}
 
 	// convert result from Elliptic to bytes array
-	res := CompressKey(commitment)
-	return res, nil
+	return (CompressKey(commitment))
 }
 
-
+//type PedersenCommitment struct{
+//	number int
+//
+//
+//}
