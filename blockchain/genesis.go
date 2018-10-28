@@ -30,7 +30,7 @@ func (self GenesisBlockGenerator) CalcMerkleRoot(txns []transaction.Transaction)
 }
 
 func createGenesisInputNote(spendingKey *privacy.SpendingKey, idx uint) *client.Note {
-	addr := privacy.GenerateAddress(*spendingKey)
+	addr := privacy.GeneratePublicKey(*spendingKey)
 	rho := [32]byte{byte(idx)}
 	r := [32]byte{byte(idx)}
 	note := &client.Note{

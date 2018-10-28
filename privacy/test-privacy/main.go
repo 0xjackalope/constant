@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/ninjadotorg/cash/privacy"
+	"math/big"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 	//fmt.Printf("\nSpending key: %v\n", spendingKey)
 	//fmt.Println(len(spendingKey))
 	//
-	//address := privacy.GenerateAddress(spendingKey)
+	//address := privacy.GeneratePublicKey(spendingKey)
 	//fmt.Printf("\nAddress: %v\n", address)
 	//fmt.Println(len(address))
 	//point, err := privacy.DecompressKey(address)
@@ -59,31 +60,49 @@ func main() {
 	//a := "aaaaaaaaaaaaaaaaa"
 
 	// //var b privacy.Commitment
-	var xx privacy.CommitmentParams
-	xx.InitCommitment()
-
-	var sn privacy.SerialNumber
-	var v privacy.Value
-	sn = []byte("aaaaaaa")
-	v = []byte("bbbbbbb")
-
-	m := make(map[string][]byte)
-
-	//m["sn"] = sn
-	//m["v"] = v
-	m = map[string][]byte{
-		"sn": sn,
-		"v": v,
-	}
-	fmt.Printf("m['sn']: %+v\n", m["sn"])
-	fmt.Printf("m['v']: %+v\n", m["v"])
-
-
-
-
-	//for i:=0;i<4;i++{
-	//	values[i] = make([]byte, len(a))
-	//	values[i] = []byte(a)
+	//var xx privacy.CommitmentParams
+	//xx.InitCommitment()
+	//
+	//var sn privacy.SerialNumber
+	//var v privacy.Value
+	//sn = []byte("aaaaaaa")
+	//v = []byte("bbbbbbb")
+	//
+	//m := make(map[string][]byte)
+	//
+	////m["sn"] = sn
+	////m["v"] = v
+	//m = map[string][]byte{
+	//	"sn": sn,
+	//	"v": v,
 	//}
-	fmt.Println(xx.Commit(m))
+	//fmt.Printf("m['sn']: %+v\n", m["sn"])
+	//fmt.Printf("m['v']: %+v\n", m["v"])
+	//
+	//fmt.Println(xx.Commit(m))
+
+
+	var cm privacy.CommitmentParams
+	cm.InitCommitment()
+
+	spendingKey := privacy.GenerateSpendingKey(new(big.Int).SetInt64(123).Bytes())
+	fmt.Printf("\nSpending key: %v\n", spendingKey)
+
+	pubKey := privacy.GeneratePublicKey(spendingKey)
+	serialNumber := privacy.RandBytes(32)
+	value := []byte("10")
+	r := privacy.RandBytes(32)
+	coin := privacy.Coin{
+		PublicKey:pubKey,
+		SerialNumber:serialNumber,
+		CoinCommitment: nil,
+		R:r,
+		Value:value,
+	}
+	coin.Commit()
+
+	proof := privacy.ZkpPedersenCMProve(cm, coin.PublicKey, coin.SerialNumber,  coin.Value, coin.R)
+
+	fmt.Println(privacy.ZkpPedersenCMVerify(cm, *proof, coin.CoinCommitment))
+
 }

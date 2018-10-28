@@ -1,6 +1,7 @@
 package privacy
 
 import (
+	"fmt"
 	"math/big"
 	"math/rand"
 	"time"
@@ -13,21 +14,21 @@ type ZkpPedersenCMProof struct {
 	Alpha, Beta, GammaAddr, GammaValue, GammaSN, GammaR []byte
 }
 
-func getRandom() []byte {
-	rand.Seed(time.Now().UTC().Unix())
-	r := make([]byte, 32)
-	rand.Read(r)
-	return r
-}
+//func GetRandom() []byte {
+//	rand.Seed(time.Now().UTC().Unix())
+//	r := make([]byte, 32)
+//	rand.Read(r)
+//	return r
+//}
 
 // ZkpPedersenCMProve create zero knowledge proof for an opening of a Pedersen commitment
 func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, value, cmRnd []byte) *ZkpPedersenCMProof {
 	zkp := new(ZkpPedersenCMProof)
 	rand.Seed(time.Now().UTC().Unix())
-	r0 := getRandom()
-	r1 := getRandom()
-	r2 := getRandom()
-	r3 := getRandom()
+	r0 := RandBytes(32)
+	r1 := RandBytes(32)
+	r2 := RandBytes(32)
+	r3 := RandBytes(32)
 	alpha := new(EllipticPoint)
 	tmp := new(EllipticPoint)
 	//
@@ -38,7 +39,9 @@ func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, 
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
 	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[3].X, cm.G[3].Y, r3)
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
+	zkp.Alpha = make([]byte, 33)
 	copy(zkp.Alpha, CompressKey(*alpha))
+	//fmt.Printf("Alpha: %+v\n", zkp.Alpha)
 	//
 	hashFunc := blake2b.New256()
 	appendStr := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
@@ -47,7 +50,9 @@ func ZkpPedersenCMProve(cm CommitmentParams, pubKey PublicKey, sn SerialNumber, 
 	appendStr = append(appendStr, cmRnd...)
 	appendStr = append(appendStr, CompressKey(*alpha)...)
 	beta := hashFunc.Sum(appendStr)
+	zkp.Beta = make([]byte, 33)
 	copy(zkp.Beta, beta)
+	//fmt.Printf("Beta: %+v\n", zkp.Beta)
 	//
 	tmpRand := new(big.Int)
 	b := new(big.Int)
@@ -106,12 +111,13 @@ func ZkpPedersenCMVerify(cm CommitmentParams, proofsvalue ZkpPedersenCMProof, co
 
 	commitmentsPoint, error := DecompressKey(commitmentsvalue)
 	if error != nil {
-		//fmt.Println("Cannot decompress commitments value to ECC point")
+		fmt.Println("Cannot decompress commitments value to ECC point")
 	}
 
 	alphaPoint, error := DecompressKey(proofsvalue.Alpha)
 	if error != nil {
-		//fmt.Println("Cannot decompress alpha to ECC point")
+
+		fmt.Println("Cannot decompress alpha to ECC point")
 	}
 
 	xY, yY := Curve.ScalarMult(commitmentsPoint.X, commitmentsPoint.Y, Beta)

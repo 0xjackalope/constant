@@ -601,7 +601,7 @@ func CreateTxs(
 // }
 
 // func createDummyNote(spendingKey *privacy.SpendingKey) *client.Note {
-// 	addr := privacy.GenerateAddress(*spendingKey)
+// 	addr := privacy.GeneratePublicKey(*spendingKey)
 // 	var rho, r [32]byte
 // 	copy(rho[:], client.RandBits(32*8))
 // 	copy(r[:], client.RandBits(32*8))

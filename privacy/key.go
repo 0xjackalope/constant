@@ -103,16 +103,16 @@ func GenerateSpendingKey(seed []byte) SpendingKey {
 	return spendingKey
 }
 
-// GenerateAddress computes an address corresponding with spendingKey
+// GeneratePublicKey computes an address corresponding with spendingKey
 // Pk : 33 bytes
-func GenerateAddress(spendingKey []byte) PublicKey {
+func GeneratePublicKey(spendingKey []byte) PublicKey {
 	var p EllipticPoint
 	p.X, p.Y = Curve.ScalarBaseMult(spendingKey)
-	Logger.log.Infof("p.X: %v\n", p.X)
-	Logger.log.Infof("p.Y: %v\n", p.Y)
-	address := CompressKey(p)
+	//Logger.log.Infof("p.X: %v\n", p.X)
+	//Logger.log.Infof("p.Y: %v\n", p.Y)
+	publicKey := CompressKey(p)
 
-	return address
+	return publicKey
 }
 
 // GenerateReceivingKey computes a receiving key corresponding with spendingKey
@@ -142,7 +142,7 @@ func GenerateTransmissionKey(receivingKey []byte) TransmissionKey {
 // GenerateViewingKey generates a viewingKey corressponding with spendingKey
 func GenerateViewingKey(spendingKey []byte) ViewingKey {
 	var viewingKey ViewingKey
-	viewingKey.Pk = GenerateAddress(spendingKey)
+	viewingKey.Pk = GeneratePublicKey(spendingKey)
 	viewingKey.Rk = GenerateReceivingKey(spendingKey)
 	return viewingKey
 }
@@ -150,7 +150,7 @@ func GenerateViewingKey(spendingKey []byte) ViewingKey {
 // GeneratePaymentAddress generates a payment address corressponding with spendingKey
 func GeneratePaymentAddress(spendingKey []byte) PaymentAddress {
 	var paymentAddress PaymentAddress
-	paymentAddress.Pk = GenerateAddress(spendingKey)
+	paymentAddress.Pk = GeneratePublicKey(spendingKey)
 	paymentAddress.Tk = GenerateTransmissionKey(GenerateReceivingKey(spendingKey))
 	return paymentAddress
 }
