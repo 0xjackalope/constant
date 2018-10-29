@@ -108,17 +108,21 @@ func main() {
 	// fmt.Println(cm3)
 
 	// witnesses := make([][]byte, privacy.CM_CAPACITY)
-	witness := [][]byte{
-		coin.PublicKey,
-		coin.Value,
-		coin.SerialNumber,
-		coin.R,
-	}
-	pro := new(privacy.ProtocolForPKCommittedValues)
-	pro.SetWitness(witness)
-	proof, _ := pro.Prove(coin.CoinCommitment)
 
-	fmt.Printf("Proof: %+v\n", proof)
+	// witness := [][]byte{
+	// 	coin.PublicKey,
+	// 	coin.Value,
+	// 	coin.SerialNumber,
+	// 	coin.R,
+	// }
 
-	fmt.Println(pro.Verify(*proof, coin.CoinCommitment))
+	// var zk privacy.ZKProtocols
+
+	// pk := zk.GetPKCommittedValues()
+	// pk.SetWitness(witness)
+	// proof, _ := zk.GetPKCommittedValues().Prove(coin.CoinCommitment)
+
+	// fmt.Printf("Proof: %+v\n", proof)
+
+	// fmt.Println(zk.GetPKCommittedValues().Verify(*proof, coin.CoinCommitment))
 }

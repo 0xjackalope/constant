@@ -1,28 +1,34 @@
 package privacy
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
 
 	"github.com/minio/blake2b-simd"
 )
 
-// ProtocolForPKCommittedValues is a protocol for Zero-knowledge Proof of Knowledge of committed values
+// ZKProtocols interface
+type ZKProtocols interface {
+	SetWitness(witnesses [][]byte)
+	Prove() ([]byte, error)
+	Verify() bool
+}
+
+// PKComValProtocol is a protocol for Zero-knowledge Proof of Knowledge of committed values
 // include witnesses
-type ProtocolForPKCommittedValues struct {
+type PKComValProtocol struct {
 	witnesses [][]byte
 	// Proof     *ProofForPKCommittedValues
 }
 
-// ProofForPKCommittedValues contains proof's value
-type ProofForPKCommittedValues struct {
-	Alpha, Beta []byte
-	Gammas      [][]byte
+// PKComValProof contains proof's value
+type PKComValProof struct {
+	Alpha  []byte
+	Gammas [][]byte
 }
 
 // SetWitness sets witnesses
-func (pro *ProtocolForPKCommittedValues) SetWitness(witnesses [][]byte) {
+func (pro *PKComValProtocol) SetWitness(witnesses [][]byte) {
 	pro.witnesses = make([][]byte, len(witnesses))
 	for i := 0; i < len(witnesses); i++ {
 		copy(pro.witnesses[i], witnesses[i])
@@ -30,12 +36,12 @@ func (pro *ProtocolForPKCommittedValues) SetWitness(witnesses [][]byte) {
 }
 
 // Prove creates zero knowledge proof for an opening of a Pedersen commitment
-func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofForPKCommittedValues, error) {
+func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, error) {
 	if len(pro.witnesses) != 4 {
 		return nil, fmt.Errorf("len of witnesses must be equal to 4")
 	}
 
-	proof := new(ProofForPKCommittedValues)
+	proof := new(PKComValProof)
 
 	// Calculate random numbers
 	r := make([][]byte, CM_CAPACITY)
@@ -65,8 +71,6 @@ func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofFo
 	appendStr = append(appendStr, CompressKey(*alpha)...)
 	hashFunc.Write(appendStr)
 	beta := hashFunc.Sum(nil)
-	proof.Beta = make([]byte, 32)
-	copy(proof.Beta, beta)
 
 	// Calculate gammas
 	b := new(big.Int)
@@ -74,7 +78,7 @@ func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofFo
 	bMulWitness := new(big.Int)
 	randTmp := new(big.Int)
 
-	b.SetBytes(proof.Beta)
+	b.SetBytes(beta)
 	proof.Gammas = make([][]byte, CM_CAPACITY)
 
 	for i := 0; i < CM_CAPACITY; i++ {
@@ -87,7 +91,7 @@ func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofFo
 }
 
 // Verify check the proof's value
-func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues, commitmentValue []byte) bool {
+func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte) bool {
 	// re-calculate beta and check whether it is equal to beta of proof or not
 	hashFunc := blake2b.New256()
 	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
@@ -97,10 +101,6 @@ func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues,
 	appendStr = append(appendStr, proof.Alpha...)
 	hashFunc.Write(appendStr)
 	beta := hashFunc.Sum(nil)
-	if !bytes.Equal(beta, proof.Beta) {
-		fmt.Println("beta is not equal")
-		return false
-	}
 
 	// Calculate right point:
 	rightPoint := EllipticPoint{big.NewInt(0), big.NewInt(0)}

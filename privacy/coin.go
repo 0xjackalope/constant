@@ -18,7 +18,7 @@ type Coin struct {
 	PublicKey      PublicKey
 	SerialNumber   SerialNumber
 	CoinCommitment CoinCommitment
-	R              Random
+	R              Random // Random for coin commitment
 	Value, Info    []byte
 }
 
