@@ -48,12 +48,11 @@ func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofFo
 	alpha := new(EllipticPoint)
 	tmp := new(EllipticPoint)
 	alpha.X, alpha.Y = Curve.ScalarMult(Pcm.G[0].X, Pcm.G[0].Y, r[0])
-	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[1].X, Pcm.G[1].Y, r[1])
-	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[2].X, Pcm.G[2].Y, r[2])
-	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[3].X, Pcm.G[3].Y, r[3])
-	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
+	for i:=1;i<CM_CAPACITY;i++{
+		tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[i].X, Pcm.G[i].Y, r[i])
+		alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
+	}
+
 	proof.Alpha = make([]byte, 33)
 	copy(proof.Alpha, CompressKey(*alpha))
 
@@ -111,16 +110,16 @@ func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues,
 		rightPoint.X, rightPoint.Y = Curve.Add(rightPoint.X, rightPoint.Y, tmpPoint.X, tmpPoint.Y)
 	}
 
-	Logger.log.Infof("commitment value: %v\n", commitmentValue)
+//	Logger.log.Infof("commitment value: %+v\n", commitmentValue)
 	commitmentPoint, err := DecompressCommitment(commitmentValue)
 	if err != nil {
-		Logger.log.Errorf("Decompress commitment error: %v\n", err.Error())
+	//	Logger.log.Errorf("Decompress commitment error: %+v\n", err.Error())
 	}
 
 	alphaPoint, err := DecompressKey(proof.Alpha)
-	if err != nil {
-		Logger.log.Errorf("Decompress alpha error: %v\n", err.Error())
-	}
+	//if err != nil {
+	//	Logger.log.Errorf("Decompress alpha error: %+v\n", err.Error())
+//	}
 
 	// Calculate left point:
 	xY, yY := Curve.ScalarMult(commitmentPoint.X, commitmentPoint.Y, beta)
