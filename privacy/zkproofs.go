@@ -1,14 +1,24 @@
 package privacy
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/minio/blake2b-simd"
 	"math/big"
+
+	"github.com/minio/blake2b-simd"
 )
 
-// ZkpPedersenCMProof contains proof's value
-type ZkpPedersenCMProof struct {
-	Alpha, Beta, GammaAddr, GammaValue, GammaSN, GammaR []byte
+// ProtocolForPKCommittedValues is a protocol for Zero-knowledge Proof of Knowledge of committed values
+// include witnesses
+type ProtocolForPKCommittedValues struct {
+	witnesses [][]byte
+	// Proof     *ProofForPKCommittedValues
+}
+
+// ProofForPKCommittedValues contains proof's value
+type ProofForPKCommittedValues struct {
+	Alpha, Beta []byte
+	Gammas      [][]byte
 }
 
 //func GetRandom() []byte {
@@ -18,117 +28,108 @@ type ZkpPedersenCMProof struct {
 //	return r
 //}
 
-// ZkpPedersenCMProve create zero knowledge proof for an opening of a Pedersen commitment
-func ZkpPedersenCMProve(cm PCParams, pubKey PublicKey, sn SerialNumber, value, cmRnd, commitmentValue []byte) *ZkpPedersenCMProof {
-	zkp := new(ZkpPedersenCMProof)
+func (pro *ProtocolForPKCommittedValues) SetWitness(witnesses [][]byte) {
+	pro.witnesses = make([][]byte, len(witnesses))
+	for i := 0; i < len(witnesses); i++ {
+		copy(pro.witnesses[i], witnesses[i])
+	}
+}
+
+// Prove create zero knowledge proof for an opening of a Pedersen commitment
+func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) *ProofForPKCommittedValues {
+	proof := new(ProofForPKCommittedValues)
 	//rand.Seed(time.Now().UTC().Unix())
-	r0 := RandBytes(32)
-	r1 := RandBytes(32)
-	r2 := RandBytes(32)
-	r3 := RandBytes(32)
+	r := make([][]byte, CM_CAPACITY)
+	for i := 0; i < 4; i++ {
+		r[i] = RandBytes(32)
+	}
 	alpha := new(EllipticPoint)
 	tmp := new(EllipticPoint)
 	//
-	alpha.X, alpha.Y = Curve.ScalarMult(cm.G[0].X, cm.G[0].Y, r0)
-	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[1].X, cm.G[1].Y, r1)
+	alpha.X, alpha.Y = Curve.ScalarMult(Pcm.G[0].X, Pcm.G[0].Y, r[0])
+	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[1].X, Pcm.G[1].Y, r[1])
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[2].X, cm.G[2].Y, r2)
+	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[2].X, Pcm.G[2].Y, r[2])
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(cm.G[3].X, cm.G[3].Y, r3)
+	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[3].X, Pcm.G[3].Y, r[3])
 	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	zkp.Alpha = make([]byte, 33)
-	copy(zkp.Alpha, CompressKey(*alpha))
+	proof.Alpha = make([]byte, 33)
+	copy(proof.Alpha, CompressKey(*alpha))
 	//fmt.Printf("Alpha: %+v\n", zkp.Alpha)
 	//Compute commitment value
 
-
-	//
+	// calculate beta
 	hashFunc := blake2b.New256()
-	appendStr := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
-	appendStr = append(appendStr, CompressKey(cm.G[2])...)
-	appendStr = append(appendStr, CompressKey(cm.G[3])...)
-	appendStr = append(appendStr, cmRnd...)
+	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
+	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
+	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+	appendStr = append(appendStr, commitmentValue...)
 	appendStr = append(appendStr, CompressKey(*alpha)...)
-	beta := hashFunc.Sum(appendStr)
-	zkp.Beta = make([]byte, 33)
-	copy(zkp.Beta, beta)
-	//fmt.Printf("Beta: %+v\n", zkp.Beta)
-	//
-	tmpRand := new(big.Int)
+	hashFunc.Write(appendStr)
+	beta := hashFunc.Sum(nil)
+	proof.Beta = make([]byte, 32)
+	copy(proof.Beta, beta)
+
 	b := new(big.Int)
+	witness := new(big.Int)
+	bMulWitness := new(big.Int)
+	randTmp := new(big.Int)
 
-	//compute GammaAddr
-	b.SetBytes(zkp.Beta)
-	addrVal := new(big.Int)
-	addrVal.SetBytes(pubKey)
-	x := b.Mul(b, addrVal)
-	copy(zkp.GammaAddr, x.Add(x, tmpRand.SetBytes(r0)).Bytes())
-	//compute GammaValue
-	b.SetBytes(zkp.Beta)
-	coinVal := new(big.Int)
-	coinVal.SetBytes(value)
-	x = b.Mul(b, coinVal)
-	copy(zkp.GammaValue, x.Add(x, tmpRand.SetBytes(r1)).Bytes())
-	//compute GammaSerialNumber
-	b.SetBytes(zkp.Beta)
-	serialVal := new(big.Int)
-	serialVal.SetBytes(sn)
-	x = b.Mul(b, serialVal)
-	copy(zkp.GammaSN, x.Add(x, tmpRand.SetBytes(r2)).Bytes())
+	b.SetBytes(proof.Beta)
+	fmt.Printf("Len witness: %v\n", len(pro.witnesses))
+	proof.Gammas = make([][]byte, 4)
 
-	//compute GammaR
-	b.SetBytes(zkp.Beta)
-	cmRandVal := new(big.Int)
-	cmRandVal.SetBytes(cmRnd)
-	x = b.Mul(b, cmRandVal)
-	copy(zkp.GammaR, x.Add(x, tmpRand.SetBytes(r3)).Bytes())
-	return zkp
+	for i := 0; i < len(pro.witnesses); i++ {
+		witness.SetBytes(pro.witnesses[i])
+		bMulWitness.Mul(b, witness)
+		proof.Gammas[i] = make([]byte, 32)
+		copy(proof.Gammas[i], bMulWitness.Add(bMulWitness, randTmp.SetBytes(r[i])).Bytes())
+	}
+	return proof
 }
 
-
 //ZkpPedersenCMVerify check the proof's value
-func ZkpPedersenCMVerify(cm PCParams, proofsvalue ZkpPedersenCMProof, commitmentsvalue []byte) bool {
+func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues, commitmentValue []byte) bool {
+	// re-calculate beta and check whether it is equal to beta of proof or not
+	hashFunc := blake2b.New256()
+	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
+	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
+	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+	appendStr = append(appendStr, commitmentValue...)
+	appendStr = append(appendStr, proof.Alpha...)
+	hashFunc.Write(appendStr)
+	beta := hashFunc.Sum(nil)
+	if !bytes.Equal(beta, proof.Beta) {
+		fmt.Println("beta is not equal")
+		return false
+	}
 
-	plainBeta := append(CompressKey(cm.G[0]), CompressKey(cm.G[1])...)
-	plainBeta = append(plainBeta, CompressKey(cm.G[2])...)
-	plainBeta = append(plainBeta, CompressKey(cm.G[3])...)
-	plainBeta = append(plainBeta, commitmentsvalue...)
-	plainBeta = append(plainBeta, proofsvalue.Alpha...)
+	rightPoint := EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	tmpPoint := new(EllipticPoint)
+	for i := 0; i < CM_CAPACITY; i++ {
+		tmpPoint.X, tmpPoint.Y = Curve.ScalarMult(Pcm.G[i].X, Pcm.G[i].Y, proof.Gammas[i])
+		rightPoint.X, rightPoint.Y = Curve.Add(rightPoint.X, rightPoint.Y, tmpPoint.X, tmpPoint.Y)
+	}
 
-	hashMachine := blake2b.New256()
-	hashMachine.Write(plainBeta)
+	fmt.Printf("commitment value: %v\n", commitmentValue)
+	commitmentPoint, error := DecompressCommitment(commitmentValue)
 
-	Beta := hashMachine.Sum(nil)
-
-	xH, yH := Curve.ScalarMult(cm.G[3].X, cm.G[3].Y, proofsvalue.GammaR)
-	xG0, yG0 := Curve.ScalarMult(cm.G[0].X, cm.G[0].Y, proofsvalue.GammaAddr)
-	xG1, yG1 := Curve.ScalarMult(cm.G[1].X, cm.G[1].Y, proofsvalue.GammaValue)
-	xG2, yG2 := Curve.ScalarMult(cm.G[2].X, cm.G[2].Y, proofsvalue.GammaSN)
-
-	xRight, yRight := Curve.Add(xH, yH, xG0, yG0)
-	xRight, yRight = Curve.Add(xRight, yRight, xG1, yG1)
-	xRight, yRight = Curve.Add(xRight, yRight, xG2, yG2)
-
-	commitmentsPoint, error := DecompressKey(commitmentsvalue)
 	if error != nil {
 		fmt.Println("Cannot decompress commitments value to ECC point")
 	}
 
-	alphaPoint, error := DecompressKey(proofsvalue.Alpha)
+	alphaPoint, error := DecompressKey(proof.Alpha)
 	if error != nil {
-
 		fmt.Println("Cannot decompress alpha to ECC point")
 	}
 
-	xY, yY := Curve.ScalarMult(commitmentsPoint.X, commitmentsPoint.Y, Beta)
+	xY, yY := Curve.ScalarMult(commitmentPoint.X, commitmentPoint.Y, beta)
+	LeftPoint := new(EllipticPoint)
 
-	xLeft, yLeft := Curve.Add(xY, yY, alphaPoint.X, alphaPoint.Y)
+	LeftPoint.X, LeftPoint.Y = Curve.Add(xY, yY, alphaPoint.X, alphaPoint.Y)
 
-	if (xRight.CmpAbs(xLeft) == 0) && (yRight.CmpAbs(yLeft) == 0) {
+	if (rightPoint.X.CmpAbs(LeftPoint.X) == 0) && (rightPoint.Y.CmpAbs(LeftPoint.Y) == 0) {
 		return false
 	}
 	return true
 }
-
-
-

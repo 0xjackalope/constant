@@ -31,11 +31,7 @@ const (
 
 var Pcm PCParams
 
-// Cm is a global variable, it is initialized only one time
-// var Cm PedersenCommitment
-// Cm = Cm.InitCommitment()
-
-// hashGenerator create new generator from a generator using hash function
+// hashGenerator derives new generator from another generator using hash function
 func hashGenerator(g EllipticPoint) EllipticPoint {
 	// res.X = hash(g.X), res.Y = sqrt(res.X^3 - 3X + B)
 	var res = new(EllipticPoint)
@@ -62,7 +58,7 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 	return *res
 }
 
-//ComputeYCoord calculate Y coord from X
+//ComputeYCoord calculates Y coord from X
 func ComputeYCoord(x *big.Int) *big.Int {
 	Q := Curve.Params().P
 	temp := new(big.Int)
@@ -96,12 +92,12 @@ func ComputeYCoord(x *big.Int) *big.Int {
 	return y
 }
 
-// Params return the parameters of commitment
+// Params returns parameters of commitment
 func (com *PCParams) Params() *PCParams {
 	return com
 }
 
-// InitCommitment initial
+// InitCommitment initializes parameters of Pedersen commitment
 func (com *PCParams) InitCommitment() {
 
 	// G0 is the base point of curve P256
@@ -128,7 +124,7 @@ func (com *PCParams) InitCommitment() {
 	//TODO: hard code parameters
 }
 
-// CommitAll commits a preoud random number and any attributes of coin
+// Commit commits a list of CM_CAPACITY value(s)
 func (com *PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
@@ -140,9 +136,3 @@ func (com *PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	// convert result from Elliptic to bytes array
 	return (CompressKey(commitment))
 }
-
-//type PedersenCommitment struct{
-//	number int
-//
-//
-//}

@@ -100,30 +100,25 @@ func main() {
 	}
 	coin.CommitAll()
 	fmt.Println(coin.CoinCommitment)
-	cm1 := coin.CommitPublicKey()
-	fmt.Println(cm1)
-	cm2 := coin.CommitValue()
-	fmt.Println(cm2)
-	cm3 := coin.CommitSerialNumber()
-	fmt.Println(cm3)
+	// cm1 := coin.CommitPublicKey()
+	// fmt.Println(cm1)
+	// cm2 := coin.CommitValue()
+	// fmt.Println(cm2)
+	// cm3 := coin.CommitSerialNumber()
+	// fmt.Println(cm3)
 
-	// fmt.Println(privacy.FULL_CM)
-	// fmt.Println(privacy.PK_CM)
-	// fmt.Println(privacy.VALUE_CM)
-	// fmt.Println(privacy.SN_CM)
+	// witnesses := make([][]byte, privacy.CM_CAPACITY)
+	witness := [][]byte{
+		coin.PublicKey,
+		coin.Value,
+		coin.SerialNumber,
+		coin.R,
+	}
+	pro := new(privacy.ProtocolForPKCommittedValues)
+	pro.SetWitness(witness)
+	proof := pro.Prove(coin.CoinCommitment)
 
-	//
-	//proof := privacy.ZkpPedersenCMProve(pcm, coin.PublicKey, coin.SerialNumber,  coin.Value, coin.R, coin.CoinCommitment)
-	//
-	//fmt.Println(privacy.ZkpPedersenCMVerify(pcm, *proof, coin.CoinCommitment))
+	fmt.Printf("Proof: %+v\n", proof)
 
-	//Gx, Gy :=privacy.Curve.Params().ScalarBaseMult(nil)
-	//
-	//c := privacy.EllipticPoint{big.NewInt(0), big.NewInt(0)}
-	//Hx, Hy:=privacy.Curve.Params().ScalarBaseMult([]byte("10"))
-	//res, _ := privacy.Curve.Add(Gx, Gy, Hx, Hy)
-	//res1, _ := privacy.Curve.Add(c.X, c.Y, Hx, Hy)
-	//fmt.Println(res)
-	//fmt.Println(res1)
-
+	fmt.Println(pro.Verify(*proof, coin.CoinCommitment))
 }
