@@ -32,7 +32,6 @@ func (pro *ProtocolForPKCommittedValues) SetWitness(witnesses [][]byte) {
 // Prove creates zero knowledge proof for an opening of a Pedersen commitment
 func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofForPKCommittedValues, error) {
 	if len(pro.witnesses) != 4 {
-
 		return nil, fmt.Errorf("len of witnesses must be equal to 4")
 	}
 
@@ -98,7 +97,7 @@ func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues,
 	hashFunc.Write(appendStr)
 	beta := hashFunc.Sum(nil)
 	if !bytes.Equal(beta, proof.Beta) {
-		fmt.Println("beta is not equal")
+		//	Logger.log.Infof("Beta is not equal")
 		return false
 	}
 
@@ -110,17 +109,16 @@ func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues,
 		rightPoint.X, rightPoint.Y = Curve.Add(rightPoint.X, rightPoint.Y, tmpPoint.X, tmpPoint.Y)
 	}
 
-//	Logger.log.Infof("commitment value: %+v\n", commitmentValue)
+	//Logger.log.Infof("commitment value: %v\n", commitmentValue)
 	commitmentPoint, err := DecompressCommitment(commitmentValue)
 	if err != nil {
-	//	Logger.log.Errorf("Decompress commitment error: %+v\n", err.Error())
+		//	Logger.log.Errorf("Decompress commitment error: %v\n", err.Error())
 	}
 
 	alphaPoint, err := DecompressKey(proof.Alpha)
-	//if err != nil {
-	//	Logger.log.Errorf("Decompress alpha error: %+v\n", err.Error())
-//	}
-
+	if err != nil {
+		//	Logger.log.Errorf("Decompress alpha error: %v\n", err.Error())
+	}
 	// Calculate left point:
 	xY, yY := Curve.ScalarMult(commitmentPoint.X, commitmentPoint.Y, beta)
 	LeftPoint := new(EllipticPoint)
