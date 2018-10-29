@@ -48,7 +48,7 @@ func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofFo
 	alpha := new(EllipticPoint)
 	tmp := new(EllipticPoint)
 	alpha.X, alpha.Y = Curve.ScalarMult(Pcm.G[0].X, Pcm.G[0].Y, r[0])
-	for i:=1;i<CM_CAPACITY;i++{
+	for i := 1; i < CM_CAPACITY; i++ {
 		tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[i].X, Pcm.G[i].Y, r[i])
 		alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
 	}
@@ -89,14 +89,17 @@ func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofFo
 // Verify check the proof's value
 func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues, commitmentValue []byte) bool {
 	// re-calculate beta and check whether it is equal to beta of proof or not
-	hashFunc := blake2b.New256()
-	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
-	appendStr = append(appendStr, commitmentValue...)
-	appendStr = append(appendStr, proof.Alpha...)
-	hashFunc.Write(appendStr)
-	beta := hashFunc.Sum(nil)
+	// hashFunc := blake2b.New256()
+	// appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
+	// appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
+	// appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+	// appendStr = append(appendStr, commitmentValue...)
+	// appendStr = append(appendStr, proof.Alpha...)
+	// hashFunc.Write(appendStr)
+	// beta := hashFunc.Sum(nil)
+
+	beta := Pcm.GetHashOfValues([][]byte{commitmentValue, proof.Alpha})
+
 	if !bytes.Equal(beta, proof.Beta) {
 		//	Logger.log.Infof("Beta is not equal")
 		return false
@@ -143,5 +146,14 @@ func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *bi
 	sRnd.Bytes()
 	zeroInt := big.NewInt(0)
 	commitmentZero := Pcm.CommitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
-	return commitmentZero, sRnd
+	xRnd := big.NewInt(0)
+	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
+	xRnd.Mod(xRnd, Curve.Params().P)
+	z := big.NewInt(0)
+	z.SetBytes(commitmentRnd)
+	z.Mul(z, xRnd)
+	z.Mod(z, Curve.Params().P)
+	z.Add(z, sRnd)
+	z.Mod(z, Curve.Params().P)
+	return commitmentZero, z
 }

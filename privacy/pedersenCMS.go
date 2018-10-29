@@ -14,6 +14,7 @@ type PedersenCommitment interface {
 	InitCommitment() *PCParams
 	// CommitAll commits
 	Commit([CM_CAPACITY][]byte) []byte
+	GetHashOfValues([]byte) []byte
 	CommitSpecValue([]byte, []byte, byte) []byte
 }
 
@@ -59,6 +60,20 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 		return *new(EllipticPoint)
 	}
 	return *res
+}
+
+//GetHashOfValues get blake2b(G0||G1||G2||G3||<inputs>)
+func (com PCParams) GetHashOfValues(values [][]byte) []byte {
+	hashFunc := blake2b.New256()
+	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
+	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
+	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+	for i := 0; i < len(values); i++ {
+		appendStr = append(appendStr, values[i]...)
+	}
+	hashFunc.Write(appendStr)
+	hashValue := hashFunc.Sum(nil)
+	return hashValue
 }
 
 //ComputeYCoord calculates Y coord from X
