@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/privacy/client"
+	"github.com/ninjadotorg/cash/privacy"
 )
 
 // TxTokenVin ...
@@ -98,8 +98,8 @@ func (tx *TxCustomToken) ValidateTransaction() bool {
 }
 
 // CreateTxCustomToken ...
-func CreateTxCustomToken(senderKey *client.SpendingKey,
-	paymentInfo []*client.PaymentInfo,
+func CreateTxCustomToken(senderKey *privacy.SpendingKey,
+	paymentInfo []*privacy.PaymentInfo,
 	rts map[byte]*common.Hash,
 	usableTx map[byte][]*Tx,
 	nullifiers map[byte]([][]byte),

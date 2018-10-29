@@ -723,7 +723,7 @@ func (self RpcServer) handleCreateCustomTokenTransaction(params interface{}, clo
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 	senderKey.KeySet.ImportFromPrivateKey(&senderKey.KeySet.PrivateKey)
-	lastByte := senderKey.KeySet.PublicKey.Apk[len(senderKey.KeySet.PublicKey.Apk)-1]
+	lastByte := senderKey.KeySet.PaymentAddress.Pk[len(senderKey.KeySet.PaymentAddress.Pk)-1]
 	chainIdSender, err := common.GetTxSenderChain(lastByte)
 	if err != nil {
 		return nil, NewRPCError(ErrUnexpected, err)
@@ -732,15 +732,15 @@ func (self RpcServer) handleCreateCustomTokenTransaction(params interface{}, clo
 	// param #2: list receiver
 	totalAmmount := int64(0)
 	receiversParam := arrayParams[1].(map[string]interface{})
-	paymentInfos := make([]*client.PaymentInfo, 0)
+	paymentInfos := make([]*privacy.PaymentInfo, 0)
 	for pubKeyStr, amount := range receiversParam {
 		receiverPubKey, err := wallet.Base58CheckDeserialize(pubKeyStr)
 		if err != nil {
 			return nil, NewRPCError(ErrUnexpected, err)
 		}
-		paymentInfo := &client.PaymentInfo{
+		paymentInfo := &privacy.PaymentInfo{
 			Amount:         uint64(amount.(float64)),
-			PaymentAddress: receiverPubKey.KeySet.PublicKey,
+			PaymentAddress: receiverPubKey.KeySet.PaymentAddress,
 		}
 		totalAmmount += int64(paymentInfo.Amount)
 		paymentInfos = append(paymentInfos, paymentInfo)
