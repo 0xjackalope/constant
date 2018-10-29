@@ -38,3 +38,5 @@ privacy/server/verifying\.key
 .DS_Store
 .env
 datadirs/data**
+data/**
+cash-*

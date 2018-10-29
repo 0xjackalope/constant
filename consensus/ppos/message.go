@@ -135,10 +135,6 @@ func (self *Engine) OnCandidateVote() {
 
 }
 
-func (self *Engine) OnCandidateRequestTx() {
-
-}
-
 func (self *Engine) sendBlockMsg(block *blockchain.Block) {
 	blockMsg, err := wire.MakeEmptyMessage(wire.CmdBlock)
 	if err != nil {
@@ -151,6 +147,11 @@ func (self *Engine) sendBlockMsg(block *blockchain.Block) {
 
 func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	Logger.log.Info("Received a MessageRequestSwap")
+
+	peerIDs := self.config.Server.GetPeerIDsFromPublicKey(msg.SealerPbk)
+	if len(peerIDs) == 0 {
+		return
+	}
 
 	senderID := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
 
@@ -205,7 +206,7 @@ func (self *Engine) OnUpdateSwap(msg *wire.MessageUpdateSwap) {
 		return
 	}
 
-	//TODO versify signatures
+	//versify signatures
 	rawBytes := []byte{}
 	rawBytes = append(rawBytes, []byte(msg.RequesterPbk)...)
 	rawBytes = append(rawBytes, msg.ChainID)

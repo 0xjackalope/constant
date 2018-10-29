@@ -1,6 +1,7 @@
 package privacy
 
 import (
+	"crypto/rand"
 	"fmt"
 	"math/big"
 
@@ -53,12 +54,11 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 	alpha := new(EllipticPoint)
 	tmp := new(EllipticPoint)
 	alpha.X, alpha.Y = Curve.ScalarMult(Pcm.G[0].X, Pcm.G[0].Y, r[0])
-	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[1].X, Pcm.G[1].Y, r[1])
-	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[2].X, Pcm.G[2].Y, r[2])
-	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
-	tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[3].X, Pcm.G[3].Y, r[3])
-	alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
+	for i := 1; i < CM_CAPACITY; i++ {
+		tmp.X, tmp.Y = Curve.ScalarMult(Pcm.G[i].X, Pcm.G[i].Y, r[i])
+		alpha.X, alpha.Y = Curve.Add(alpha.X, alpha.Y, tmp.X, tmp.Y)
+	}
+
 	proof.Alpha = make([]byte, 33)
 	copy(proof.Alpha, CompressKey(*alpha))
 
@@ -93,14 +93,16 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 // Verify check the proof's value
 func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte) bool {
 	// re-calculate beta and check whether it is equal to beta of proof or not
-	hashFunc := blake2b.New256()
-	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
-	appendStr = append(appendStr, commitmentValue...)
-	appendStr = append(appendStr, proof.Alpha...)
-	hashFunc.Write(appendStr)
-	beta := hashFunc.Sum(nil)
+	// hashFunc := blake2b.New256()
+	// appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
+	// appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
+	// appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+	// appendStr = append(appendStr, commitmentValue...)
+	// appendStr = append(appendStr, proof.Alpha...)
+	// hashFunc.Write(appendStr)
+	// beta := hashFunc.Sum(nil)
+
+	beta := Pcm.GetHashOfValues([][]byte{commitmentValue, proof.Alpha})
 
 	// Calculate right point:
 	rightPoint := EllipticPoint{big.NewInt(0), big.NewInt(0)}
@@ -110,17 +112,16 @@ func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte)
 		rightPoint.X, rightPoint.Y = Curve.Add(rightPoint.X, rightPoint.Y, tmpPoint.X, tmpPoint.Y)
 	}
 
-	fmt.Printf("commitment value: %v\n", commitmentValue)
+	//Logger.log.Infof("commitment value: %v\n", commitmentValue)
 	commitmentPoint, err := DecompressCommitment(commitmentValue)
 	if err != nil {
-		fmt.Println("Cannot decompress commitments value to ECC point")
+		//	Logger.log.Errorf("Decompress commitment error: %v\n", err.Error())
 	}
 
 	alphaPoint, err := DecompressKey(proof.Alpha)
 	if err != nil {
-		fmt.Println("Cannot decompress alpha to ECC point")
+		//	Logger.log.Errorf("Decompress alpha error: %v\n", err.Error())
 	}
-
 	// Calculate left point:
 	xY, yY := Curve.ScalarMult(commitmentPoint.X, commitmentPoint.Y, beta)
 	LeftPoint := new(EllipticPoint)
@@ -131,4 +132,27 @@ func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte)
 		return false
 	}
 	return true
+}
+
+//ProveIsZero generate a proof prove that the commitment is zero
+func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *big.Int) {
+	//var x big.Int
+	//s is a random number in Zp, with p is P, which is order of Curve
+	sRnd, err := rand.Int(rand.Reader, Curve.Params().P)
+	if err != nil {
+		panic(err)
+	}
+	sRnd.Bytes()
+	zeroInt := big.NewInt(0)
+	commitmentZero := Pcm.CommitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
+	xRnd := big.NewInt(0)
+	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
+	xRnd.Mod(xRnd, Curve.Params().P)
+	z := big.NewInt(0)
+	z.SetBytes(commitmentRnd)
+	z.Mul(z, xRnd)
+	z.Mod(z, Curve.Params().P)
+	z.Add(z, sRnd)
+	z.Mod(z, Curve.Params().P)
+	return commitmentZero, z
 }
