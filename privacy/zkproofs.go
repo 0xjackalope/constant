@@ -2,6 +2,7 @@ package privacy
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"math/big"
 
@@ -131,4 +132,18 @@ func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues,
 		return false
 	}
 	return true
+}
+
+//ProveIsZero generate a proof prove that the commitment is zero
+func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *big.Int) {
+	//var x big.Int
+	//s is a random number in Zp, with p is P, which is order of Curve
+	sRnd, err := rand.Int(rand.Reader, Curve.Params().P)
+	if err != nil {
+		panic(err)
+	}
+	sRnd.Bytes()
+	zeroInt := big.NewInt(0)
+	commitmentZero := Pcm.CommitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
+	return commitmentZero, sRnd
 }
