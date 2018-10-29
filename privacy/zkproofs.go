@@ -32,7 +32,7 @@ func (pro *ProtocolForPKCommittedValues) SetWitness(witnesses [][]byte) {
 // Prove creates zero knowledge proof for an opening of a Pedersen commitment
 func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofForPKCommittedValues, error) {
 	if len(pro.witnesses) != 4 {
-		return nil, fmt.Errorf("len of witnesses must be equal to 4")
+		return nil, Logger.log.Errorf("len of witnesses must be equal to 4")
 	}
 
 	proof := new(ProofForPKCommittedValues)
@@ -110,15 +110,15 @@ func (pro *ProtocolForPKCommittedValues) Verify(proof ProofForPKCommittedValues,
 		rightPoint.X, rightPoint.Y = Curve.Add(rightPoint.X, rightPoint.Y, tmpPoint.X, tmpPoint.Y)
 	}
 
-	fmt.Printf("commitment value: %v\n", commitmentValue)
+	Logger.log.Infof("commitment value: %v\n", commitmentValue)
 	commitmentPoint, err := DecompressCommitment(commitmentValue)
 	if err != nil {
-		fmt.Println("Cannot decompress commitments value to ECC point")
+		Logger.log.Errorf("Decompress commitment error: %v\n", err.Error())
 	}
 
 	alphaPoint, err := DecompressKey(proof.Alpha)
 	if err != nil {
-		fmt.Println("Cannot decompress alpha to ECC point")
+		Logger.log.Errorf("Decompress alpha error: %v\n", err.Error())
 	}
 
 	// Calculate left point:
