@@ -32,7 +32,8 @@ func (pro *ProtocolForPKCommittedValues) SetWitness(witnesses [][]byte) {
 // Prove creates zero knowledge proof for an opening of a Pedersen commitment
 func (pro *ProtocolForPKCommittedValues) Prove(commitmentValue []byte) (*ProofForPKCommittedValues, error) {
 	if len(pro.witnesses) != 4 {
-		return nil, Logger.log.Errorf("len of witnesses must be equal to 4")
+
+		return nil, fmt.Errorf("len of witnesses must be equal to 4")
 	}
 
 	proof := new(ProofForPKCommittedValues)
