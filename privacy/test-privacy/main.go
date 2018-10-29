@@ -100,6 +100,46 @@ func main() {
 	}
 	coin.CommitAll()
 	fmt.Println(coin.CoinCommitment)
+	r1 := privacy.RandBytes(32)
+	r2 := privacy.RandBytes(32)
+	committemp1 := privacy.Pcm.CommitSpecValue(serialNumber, r1, 0)
+	committemp2 := privacy.Pcm.CommitSpecValue(serialNumber, r2, 0)
+	fmt.Println(committemp1)
+	fmt.Println(committemp2)
+	committemp1Point, err := privacy.DecompressKey(committemp1)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	committemp2Point, err := privacy.DecompressKey(committemp2)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	r1Int := big.NewInt(0)
+	r2Int := big.NewInt(0)
+	r1Int.SetBytes(r1)
+	r2Int.SetBytes(r2)
+	r1Int.Sub(r1Int, r2Int)
+	zeroInt := big.NewInt(0)
+	if r1Int.Cmp(zeroInt) < 0 {
+		r1Int.Add(r1Int, privacy.Curve.Params().P)
+	}
+	negcommittemp2Point := new(privacy.EllipticPoint)
+	negcommittemp2Point.X = big.NewInt(0)
+	negcommittemp2Point.Y = big.NewInt(0)
+	negcommittemp2Point.X.SetBytes(committemp2Point.X.Bytes())
+	negcommittemp2Point.Y.SetBytes(committemp2Point.Y.Bytes())
+	negcommittemp2Point.Y.Sub(privacy.Curve.Params().P, committemp2Point.Y)
+
+	//negcommittemp2Point.X, negcommittemp2Point.Y = privacy.Curve.Add(negcommittemp2Point.X, negcommittemp2Point.Y, committemp2Point.X, committemp2Point.Y)
+
+	committemp1Point.X, committemp1Point.Y = privacy.Curve.Add(committemp1Point.X, committemp1Point.Y, negcommittemp2Point.X, negcommittemp2Point.Y)
+	commitZero := privacy.CompressKey(*committemp1Point)
+	proofZero, z := privacy.ProveIsZero(commitZero, r1Int.Bytes(), 0)
+	boolValue := privacy.VerifyIsZero(commitZero, proofZero, 0, z)
+	fmt.Println(boolValue)
+	fmt.Println("Done")
 	// cm1 := coin.CommitPublicKey()
 	// fmt.Println(cm1)
 	// cm2 := coin.CommitValue()

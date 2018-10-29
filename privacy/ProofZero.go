@@ -57,7 +57,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	xRnd := big.NewInt(0)
 	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
 	xRnd.Mod(xRnd, Curve.Params().P)
-	commitmentValuePoint, err := DecompressCommitment(commitmentValue)
+	commitmentValuePoint, err := DecompressKey(commitmentValue)
 	if err != nil {
 		return false
 	}
@@ -65,7 +65,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 		return false
 	}
 
-	commitmentZeroSPoint, err := DecompressCommitment(commitmentZeroS)
+	commitmentZeroSPoint, err := DecompressKey(commitmentZeroS)
 	if err != nil {
 		return false
 	}
@@ -76,13 +76,15 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	zeroInt := big.NewInt(0)
 	commitmentZeroZ := Pcm.CommitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
 	verifyPoint := new(EllipticPoint)
+	verifyPoint.X = big.NewInt(0)
+	verifyPoint.Y = big.NewInt(0)
 	verifyPoint.X.SetBytes(commitmentValuePoint.X.Bytes())
 	verifyPoint.Y.SetBytes(commitmentValuePoint.Y.Bytes())
 	verifyPoint.X, verifyPoint.Y = Curve.ScalarMult(verifyPoint.X, verifyPoint.Y, xRnd.Bytes())
 
 	verifyPoint.X, verifyPoint.Y = Curve.Add(verifyPoint.X, verifyPoint.Y, commitmentZeroSPoint.X, commitmentZeroSPoint.Y)
 
-	commitmentZeroZPoint, err := DecompressCommitment(commitmentZeroZ)
+	commitmentZeroZPoint, err := DecompressKey(commitmentZeroZ)
 	if err != nil {
 		return false
 	}
