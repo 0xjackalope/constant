@@ -27,12 +27,13 @@ type Engine struct {
 	committeeMutex sync.Mutex
 
 	// channel
-	cQuit       chan struct{}
-	cQuitSealer chan struct{}
-	cBlockSig   chan blockSig
-	cSwapSig    chan swapSig
-	cQuitSwap   chan struct{}
-	cSwapChain  chan byte
+	cQuit                 chan struct{}
+	cQuitSealer           chan struct{}
+	cBlockSig             chan blockSig
+	cQuitSwap             chan struct{}
+	cSwapChain            chan byte
+	cSwapSig              chan swapSig
+	cQuitCommitteeWatcher chan struct{}
 
 	config                EngineConfig
 	knownChainsHeight     chainsHeight
@@ -173,7 +174,7 @@ func (self *Engine) Start() error {
 					self.validatedChainsHeight.Lock()
 					self.validatedChainsHeight.Heights[chainID] = blockHeight
 					self.validatedChainsHeight.Unlock()
-					self.committee.UpdateCommittee(block.ChainLeader, block.Header.BlockCommitteeSigs)
+					self.committee.UpdateCommitteePoint(block.ChainLeader, block.Header.BlockCommitteeSigs)
 				}
 			}(chainID)
 		}
@@ -464,7 +465,7 @@ func (self *Engine) UpdateChain(block *blockchain.Block) {
 	self.validatedChainsHeight.Heights[block.Header.ChainID] = int(block.Height)
 	self.validatedChainsHeight.Unlock()
 
-	self.committee.UpdateCommittee(block.ChainLeader, block.Header.BlockCommitteeSigs)
+	self.committee.UpdateCommitteePoint(block.ChainLeader, block.Header.BlockCommitteeSigs)
 }
 
 func (self *Engine) GetCndList(block *blockchain.Block) map[string]blockchain.CommitteeCandidateInfo {
@@ -532,14 +533,18 @@ func (self *Engine) StartSwap() error {
 				copy(committee, self.GetCommittee())
 
 				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
-				// TODO get first public key from candidate list and check available node
-				sealerPbk := "abc"
-				//peerIDs := self.config.Server.GetPeerIDsFromPublicKey(sealerPbk)
-				//if len(peerIDs) == 0 {
-				//	continue
-				//}
-				// TODO check public key is connected
-
+				committeeCandidateList := self.config.BlockChain.GetCommitteeCandidateList()
+				sealerPbk := ""
+				for _, committeeCandidatePbk := range committeeCandidateList {
+					peerIDs := self.config.Server.GetPeerIDsFromPublicKey(committeeCandidatePbk)
+					if len(peerIDs) == 0 {
+						continue
+					}
+					sealerPbk = committeeCandidatePbk
+				}
+				if sealerPbk == "" {
+					continue
+				}
 				signatureMap := make(map[string]string)
 
 			BeginSwap:
@@ -625,6 +630,11 @@ func (self *Engine) StartSwap() error {
 				err := self.updateCommittee(sealerPbk, chainId)
 				if err == nil {
 					// broadcast message for update new committee list
+					reqSigMsg, _ := wire.MakeEmptyMessage(wire.CmdUpdateSwap)
+					reqSigMsg.(*wire.MessageUpdateSwap).RequesterPbk = requesterPbk
+					reqSigMsg.(*wire.MessageUpdateSwap).ChainID = chainId
+					reqSigMsg.(*wire.MessageUpdateSwap).SealerPbk = sealerPbk
+					reqSigMsg.(*wire.MessageUpdateSwap).Signatures = signatureMap
 				} else {
 					Logger.log.Errorf("Update committee is error", err)
 				}
@@ -650,8 +660,24 @@ func (self *Engine) updateCommittee(sealerPbk string, chanId byte) error {
 	}
 	self.Committee = append(committee[:chanId], sealerPbk)
 	self.Committee = append(self.Committee, committee[chanId+1:]...)
-	//TODO remove sealerPbk from candidate list
-
+	//remove sealerPbk from candidate list
+	for chainId, bestState := range self.config.BlockChain.BestState {
+		bestState.RemoveCandidate(sealerPbk)
+		self.config.BlockChain.StoreBestState(byte(chainId))
+	}
 
 	return nil
+}
+
+func (self *Engine) CommitteeWatcher() {
+	self.cQuitCommitteeWatcher = make(chan struct{})
+	for {
+		select {
+		case <-self.cQuitCommitteeWatcher:
+			Logger.log.Info("Committee watcher stoppeds")
+			return
+		case <-time.After(CmWacherInterval * time.Second):
+
+		}
+	}
 }
