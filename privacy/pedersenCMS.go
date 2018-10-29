@@ -18,7 +18,7 @@ type PedersenCommitment interface {
 
 // PCParams represents the parameters for the commitment
 type PCParams struct {
-	G [4]EllipticPoint // generators
+	G [CM_CAPACITY]EllipticPoint // generators
 	// G[0]: public key
 	// G[1]: Value
 	// G[2]: SerialNumber
@@ -115,7 +115,7 @@ func (com *PCParams) InitCommitment() {
 	com.G[0] = EllipticPoint{Curve.Params().Gx, Curve.Params().Gy}
 	//fmt.Printf("G0.X: %#v\n", com.G[0].X.Bytes())
 	//fmt.Printf("G0.Y: %#v\n", com.G[0].Y.Bytes())
-	for i := 1; i < 4; i++ {
+	for i := 1; i < CM_CAPACITY; i++ {
 		com.G[i] = hashGenerator(com.G[i-1])
 		//fmt.Printf("G%v.X: %#v\n", i, com.G[i].X.Bytes())
 		//fmt.Printf("G%v.Y: %#v\n", i, com.G[i].Y.Bytes())

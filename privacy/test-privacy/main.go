@@ -116,7 +116,7 @@ func main() {
 	}
 	pro := new(privacy.ProtocolForPKCommittedValues)
 	pro.SetWitness(witness)
-	proof := pro.Prove(coin.CoinCommitment)
+	proof, _ := pro.Prove(coin.CoinCommitment)
 
 	fmt.Printf("Proof: %+v\n", proof)
 

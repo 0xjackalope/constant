@@ -224,6 +224,7 @@ func DecompressKey(pubKeyStr []byte) (pubkey *EllipticPoint, err error) {
 	return pubkey, nil
 }
 
+// DecompressCommitment decompress commitment byte array
 func DecompressCommitment(commitment []byte) (point *EllipticPoint, err error) {
 	typeCommitment := commitment[0]
 	fmt.Printf("Type Commmitment: %v\n", typeCommitment)
