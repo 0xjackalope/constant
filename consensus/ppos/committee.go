@@ -76,7 +76,7 @@ func (self *Engine) CommitteeWatcher() {
 
 		case <-time.After(common.MaxBlockTime * time.Second):
 			self.committee.Lock()
-			myPubKey := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+			myPubKey := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
 			if common.IndexOfStr(myPubKey, self.committee.CurrentCommittee) != -1 {
 				for idx := 0; idx < common.TotalValidators; idx++ {
 					if self.committee.CurrentCommittee[idx] != myPubKey {
