@@ -39,9 +39,9 @@ func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *bi
 	}
 	sRnd.Bytes()
 	zeroInt := big.NewInt(0)
-	commitmentZeroS := Pcm.CommitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
+	commitmentZeroS := Pcm.commitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
 	xRnd := big.NewInt(0)
-	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
+	xRnd.SetBytes(Pcm.getHashOfValues([][]byte{commitmentValue}))
 	xRnd.Mod(xRnd, Curve.Params().P)
 	z := big.NewInt(0)
 	z.SetBytes(commitmentRnd)
@@ -55,7 +55,7 @@ func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *bi
 //VerifyIsZero verify that under commitment is zero
 func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.Int) bool {
 	xRnd := big.NewInt(0)
-	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
+	xRnd.SetBytes(Pcm.getHashOfValues([][]byte{commitmentValue}))
 	xRnd.Mod(xRnd, Curve.Params().P)
 	commitmentValuePoint, err := DecompressCommitment(commitmentValue)
 	if err != nil {
@@ -74,7 +74,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	}
 
 	zeroInt := big.NewInt(0)
-	commitmentZeroZ := Pcm.CommitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
+	commitmentZeroZ := Pcm.commitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
 	verifyPoint := new(EllipticPoint)
 	verifyPoint.X.SetBytes(commitmentValuePoint.X.Bytes())
 	verifyPoint.Y.SetBytes(commitmentValuePoint.Y.Bytes())

@@ -63,11 +63,16 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 
 	// calculate beta
 	hashFunc := blake2b.New256()
-	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
-	appendStr = append(appendStr, commitmentValue...)
-	appendStr = append(appendStr, CompressKey(*alpha)...)
+	values:= [][]byte {
+		commitmentValue,
+		CompressKey((*alpha)),
+	}
+	//appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
+	//appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
+	//appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+	//appendStr = append(appendStr, commitmentValue...)
+	//appendStr = append(appendStr, CompressKey(*alpha)...)
+	appendStr:= Pcm.getHashOfValues(values)
 	hashFunc.Write(appendStr)
 	beta := hashFunc.Sum(nil)
 
@@ -101,7 +106,7 @@ func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte)
 	// hashFunc.Write(appendStr)
 	// beta := hashFunc.Sum(nil)
 
-	beta := Pcm.GetHashOfValues([][]byte{commitmentValue, proof.Alpha})
+	beta := Pcm.getHashOfValues([][]byte{commitmentValue, proof.Alpha})
 
 	// Calculate right point:
 	rightPoint := EllipticPoint{big.NewInt(0), big.NewInt(0)}
