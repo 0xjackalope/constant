@@ -1,5 +1,7 @@
 package privacy
 
+import "fmt"
+
 type SerialNumber []byte   //32 bytes
 type CoinCommitment []byte //3 bytes
 type Random []byte         //32 bytes
@@ -26,6 +28,7 @@ type Coin struct {
 func (coin *Coin) CommitAll() {
 	var values [CM_CAPACITY][]byte
 	values = [CM_CAPACITY][]byte{coin.PublicKey, coin.Value, coin.SerialNumber, coin.R}
+	fmt.Printf("cin info: %v\n", values)
 	coin.CoinCommitment = append(coin.CoinCommitment, FULL_CM)
 	coin.CoinCommitment = append(coin.CoinCommitment, Pcm.Commit(values)...)
 }
