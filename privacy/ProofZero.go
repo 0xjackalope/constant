@@ -11,7 +11,7 @@ Prove:
 	commitmentValue is commitment value of Zero, that is statement needed to prove
 	commitmentValue is calculated by Comm_ck(Value,PRDNumber)
 	commitmentRnd is PRDNumber, which is used to calculate commitmentValue
-	s <- Zp; P is Curve's order
+	s <- Zp; P is Curve base point's order, is N
 	B <- Comm_ck(0,s);  Comm_ck is PedersenCommit function using public params - Curve.Params() (G0,G1...)
 						but is just commit special value (in this case, special value is 0),
 						which is stick with G[index] (in this case, index is the index stick with commitmentValue)
@@ -33,8 +33,8 @@ Verify:
 //ProveIsZero generate a proof prove that the commitment is zero
 func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *big.Int) {
 	//var x big.Int
-	//s is a random number in Zp, with p is P, which is order of Curve
-	sRnd, err := rand.Int(rand.Reader, Curve.Params().P)
+	//s is a random number in Zp, with p is N, which is order of base point of Curve
+	sRnd, err := rand.Int(rand.Reader, Curve.Params().N)
 	if err != nil {
 		panic(err)
 	}
@@ -48,15 +48,15 @@ func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *bi
 	//Generate random x in Zp
 	xRnd := big.NewInt(0)
 	xRnd.SetBytes(Pcm.getHashOfValues([][]byte{commitmentValue}))
-	xRnd.Mod(xRnd, Curve.Params().P)
+	xRnd.Mod(xRnd, Curve.Params().N)
 
-	//Calculate z=r*x + s (mod p)
+	//Calculate z=r*x + s (mod N)
 	z := big.NewInt(0)
 	z.SetBytes(commitmentRnd)
 	z.Mul(z, xRnd)
-	z.Mod(z, Curve.Params().P)
+	z.Mod(z, Curve.Params().N)
 	z.Add(z, sRnd)
-	z.Mod(z, Curve.Params().P)
+	z.Mod(z, Curve.Params().N)
 
 	//return B, z
 	return commitmentZeroS, z
@@ -67,14 +67,14 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	//Calculate x
 	xRnd := big.NewInt(0)
 	xRnd.SetBytes(Pcm.getHashOfValues([][]byte{commitmentValue}))
-	xRnd.Mod(xRnd, Curve.Params().P)
+	xRnd.Mod(xRnd, Curve.Params().N)
 
 	//convert commitmentValue []byte to Point in ECC
 	commitmentValuePoint, err := DecompressKey(commitmentValue)
 	if err != nil {
 		return false
 	}
-	if (!Curve.IsOnCurve(commitmentValuePoint.X, commitmentValuePoint.Y)) || (z.Cmp(Curve.Params().P) > -1) {
+	if (!Curve.IsOnCurve(commitmentValuePoint.X, commitmentValuePoint.Y)) || (z.Cmp(Curve.Params().N) > -1) {
 		return false
 	}
 
@@ -83,7 +83,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	if err != nil {
 		return false
 	}
-	if (!Curve.IsOnCurve(commitmentZeroSPoint.X, commitmentZeroSPoint.Y)) || (z.Cmp(Curve.Params().P) > -1) {
+	if (!Curve.IsOnCurve(commitmentZeroSPoint.X, commitmentZeroSPoint.Y)) || (z.Cmp(Curve.Params().N) > -1) {
 		return false
 	}
 
@@ -110,7 +110,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	if err != nil {
 		return false
 	}
-	if (!Curve.IsOnCurve(commitmentZeroZPoint.X, commitmentZeroZPoint.Y)) || (z.Cmp(Curve.Params().P) > -1) {
+	if (!Curve.IsOnCurve(commitmentZeroZPoint.X, commitmentZeroZPoint.Y)) || (z.Cmp(Curve.Params().N) > -1) {
 		return false
 	}
 
@@ -138,8 +138,8 @@ func TestProofIsZero() bool {
 	r2 := RandBytes(32)
 	r1Int.SetBytes(r1)
 	r2Int.SetBytes(r2)
-	r1Int.Mod(r1Int, Curve.Params().P)
-	r2Int.Mod(r2Int, Curve.Params().P)
+	r1Int.Mod(r1Int, Curve.Params().N)
+	r2Int.Mod(r2Int, Curve.Params().N)
 	r1 = r1Int.Bytes()
 	r2 = r2Int.Bytes()
 
@@ -160,6 +160,7 @@ func TestProofIsZero() bool {
 	}
 
 	//Compute inverse of commitment2 cuz we wanna calculate A1 + A2^-1 in ECC
+	//Inverse of A(x,y) in ECC is A'(x,P-y) with P is order of field
 	inverse_committemp2Point := new(EllipticPoint)
 	inverse_committemp2Point.X = big.NewInt(0)
 	inverse_committemp2Point.Y = big.NewInt(0)
@@ -167,10 +168,10 @@ func TestProofIsZero() bool {
 	inverse_committemp2Point.Y.SetBytes(committemp2Point.Y.Bytes())
 	inverse_committemp2Point.Y.Sub(Curve.Params().P, committemp2Point.Y)
 
-	//So, when we have A1+A2^-1, we need compute r = r1 - r2, which is r of zero commitment
+	//So, when we have A1+A2^-1, we need compute r = r1 - r2 (mod N), which is r of zero commitment
 	rInt := big.NewInt(0)
 	rInt.Sub(r1Int, r2Int)
-	rInt.Mod(rInt, Curve.Params().P)
+	rInt.Mod(rInt, Curve.Params().N)
 
 	//Convert result of A1 + A2^-1 to ECC Point
 	resPoint := EllipticPoint{big.NewInt(0), big.NewInt(0)}
