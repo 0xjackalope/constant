@@ -31,6 +31,7 @@ type PKComValProof struct {
 func (pro *PKComValProtocol) SetWitness(witnesses [][]byte) {
 	pro.witnesses = make([][]byte, len(witnesses))
 	for i := 0; i < len(witnesses); i++ {
+		pro.witnesses[i] = make([]byte, len(witnesses[i]))
 		copy(pro.witnesses[i], witnesses[i])
 	}
 }
@@ -63,7 +64,7 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 
 	// calculate beta
 	hashFunc := blake2b.New256()
-	values:= [][]byte {
+	values := [][]byte{
 		commitmentValue,
 		CompressKey((*alpha)),
 	}
@@ -72,7 +73,7 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 	//appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
 	//appendStr = append(appendStr, commitmentValue...)
 	//appendStr = append(appendStr, CompressKey(*alpha)...)
-	appendStr:= Pcm.getHashOfValues(values)
+	appendStr := Pcm.getHashOfValues(values)
 	hashFunc.Write(appendStr)
 	beta := hashFunc.Sum(nil)
 
@@ -97,15 +98,6 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 // Verify check the proof's value
 func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte) bool {
 	// re-calculate beta and check whether it is equal to beta of proof or not
-	// hashFunc := blake2b.New256()
-	// appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
-	// appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
-	// appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
-	// appendStr = append(appendStr, commitmentValue...)
-	// appendStr = append(appendStr, proof.Alpha...)
-	// hashFunc.Write(appendStr)
-	// beta := hashFunc.Sum(nil)
-
 	beta := Pcm.getHashOfValues([][]byte{commitmentValue, proof.Alpha})
 
 	// Calculate right point:
