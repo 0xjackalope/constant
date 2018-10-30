@@ -2,6 +2,7 @@ package privacy
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 )
 
@@ -121,4 +122,68 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	}
 
 	return true
+}
+
+func TestProofIsZero() bool {
+	//Generate a random commitment
+
+	//First, generate random value to commit and calculate two commitment with different PRDNumber
+	//Random value
+	serialNumber := RandBytes(32)
+
+	//Random two PRDNumber in Zp
+	r1Int := big.NewInt(0)
+	r2Int := big.NewInt(0)
+	r1 := RandBytes(32)
+	r2 := RandBytes(32)
+	r1Int.SetBytes(r1)
+	r2Int.SetBytes(r2)
+	r1Int.Mod(r1Int, Curve.Params().P)
+	r2Int.Mod(r2Int, Curve.Params().P)
+	r1 = r1Int.Bytes()
+	r2 = r2Int.Bytes()
+
+	//Calculate two Pedersen commitment
+	committemp1 := Pcm.CommitSpecValue(serialNumber, r1, 0)
+	committemp2 := Pcm.CommitSpecValue(serialNumber, r2, 0)
+
+	//Converting them to ECC Point
+	committemp1Point, err := DecompressKey(committemp1)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	committemp2Point, err := DecompressKey(committemp2)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+
+	//Compute inverse of commitment2 cuz we wanna calculate A1 + A2^-1 in ECC
+	inverse_committemp2Point := new(EllipticPoint)
+	inverse_committemp2Point.X = big.NewInt(0)
+	inverse_committemp2Point.Y = big.NewInt(0)
+	inverse_committemp2Point.X.SetBytes(committemp2Point.X.Bytes())
+	inverse_committemp2Point.Y.SetBytes(committemp2Point.Y.Bytes())
+	inverse_committemp2Point.Y.Sub(Curve.Params().P, committemp2Point.Y)
+
+	//So, when we have A1+A2^-1, we need compute r = r1 - r2, which is r of zero commitment
+	rInt := big.NewInt(0)
+	rInt.Sub(r1Int, r2Int)
+	rInt.Mod(rInt, Curve.Params().P)
+
+	//Convert result of A1 + A2^-1 to ECC Point
+	resPoint := EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	resPoint.X, resPoint.Y = Curve.Add(committemp1Point.X, committemp1Point.Y, inverse_committemp2Point.X, inverse_committemp2Point.Y)
+
+	//Convert it to byte array
+	commitZero := CompressKey(resPoint)
+
+	//Compute proof
+	proofZero, z := ProveIsZero(commitZero, r1Int.Bytes(), 0)
+
+	//verify proof
+	boolValue := VerifyIsZero(commitZero, proofZero, 0, z)
+	fmt.Println("Test ProofIsZero resulit: ", boolValue)
+	return boolValue
 }
