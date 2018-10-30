@@ -124,6 +124,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	return true
 }
 
+//TestProofIsZero test prove and verify function
 func TestProofIsZero() bool {
 	//Generate a random commitment
 
