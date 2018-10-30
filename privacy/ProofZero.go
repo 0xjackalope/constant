@@ -42,7 +42,7 @@ func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *bi
 	zeroInt := big.NewInt(0)
 
 	//Calculate B = commitmentZeroS = comm_ck(0,s,index)
-	commitmentZeroS := Pcm.commitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
+	commitmentZeroS := Pcm.CommitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
 
 	//Generate random x in Zp
 	xRnd := big.NewInt(0)
@@ -102,7 +102,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	zeroInt := big.NewInt(0)
 
 	//Calculate comm_ck(0,z, index)
-	commitmentZeroZ := Pcm.commitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
+	commitmentZeroZ := Pcm.CommitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
 
 	//convert result to point
 	commitmentZeroZPoint, err := DecompressKey(commitmentZeroZ)

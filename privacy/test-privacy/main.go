@@ -126,11 +126,15 @@ func main() {
 		return
 	}
 
+	tempInt := big.NewInt(-1)
+	committemp2Point.X, committemp2Point.Y = privacy.Curve.ScalarMult(committemp2Point.X, committemp2Point.Y, tempInt.Bytes())
+
 	r1Int.Sub(r1Int, r2Int)
 	zeroInt := big.NewInt(0)
 	if r1Int.Cmp(zeroInt) < 0 {
 		r1Int.Mod(r1Int, privacy.Curve.Params().P)
 	}
+
 	negcommittemp2Point := new(privacy.EllipticPoint)
 	negcommittemp2Point.X = big.NewInt(0)
 	negcommittemp2Point.Y = big.NewInt(0)
@@ -140,7 +144,7 @@ func main() {
 
 	//negcommittemp2Point.X, negcommittemp2Point.Y = privacy.Curve.Add(negcommittemp2Point.X, negcommittemp2Point.Y, committemp2Point.X, committemp2Point.Y)
 
-	committemp1Point.X, committemp1Point.Y = privacy.Curve.Add(committemp1Point.X, committemp1Point.Y, negcommittemp2Point.X, negcommittemp2Point.Y)
+	committemp1Point.X, committemp1Point.Y = privacy.Curve.Add(committemp1Point.X, committemp1Point.Y, committemp2Point.X, committemp2Point.Y)
 	commitZero := privacy.CompressKey(*committemp1Point)
 	proofZero, z := privacy.ProveIsZero(commitZero, r1Int.Bytes(), 0)
 	boolValue := privacy.VerifyIsZero(commitZero, proofZero, 0, z)

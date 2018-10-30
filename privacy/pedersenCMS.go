@@ -15,7 +15,7 @@ type PedersenCommitment interface {
 	// CommitAll commits
 	Commit([CM_CAPACITY][]byte) []byte
 	getHashOfValues([]byte) []byte
-	commitSpecValue([]byte, []byte, byte) []byte
+	CommitSpecValue([]byte, []byte, byte) []byte
 }
 
 // PCParams represents the parameters for the commitment
@@ -156,7 +156,7 @@ func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	return (CompressKey(commitment))
 }
 
-func (com PCParams) commitSpecValue(value, sRnd []byte, index byte) []byte {
+func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
 	temp = EllipticPoint{big.NewInt(0), big.NewInt(0)}
