@@ -154,7 +154,7 @@ func GeneratePaymentAddress(spendingKey []byte) PaymentAddress {
 	return paymentAddress
 }
 
-// FromPointToByteArray converts an elliptic point to byte array
+// FromPointToByteArray converts an elliptic point to byte arraygit
 func FromPointToByteArray(p EllipticPoint) []byte {
 	var pointByte []byte
 	x := p.X.Bytes()

@@ -27,7 +27,7 @@ type PedersenCommitment interface {
 
 // PCParams represents the parameters for the commitment
 type PCParams struct {
-	G [CM_CAPACITY]EllipticPoint // generators
+	G[CM_CAPACITY]EllipticPoint // generators
 	// G[0]: public key
 	// G[1]: Value
 	// G[2]: SerialNumber
