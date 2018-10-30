@@ -29,7 +29,6 @@ func (pro *PKComZeroOneProtocol) SetWitness(witnesses [][]byte) {
 }
 
 func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKComZeroOneProof, error) {
-	// m := binary.BigEndian.Uint64(pro.witnesses[int(index)])
 	indexInt := int(index)
 	fmt.Printf("index int: %v\n", indexInt)
 	if indexInt < 0 || indexInt > 3 {
@@ -52,11 +51,11 @@ func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKC
 	// // Calculate ca, cb
 	ca := Pcm.CommitSpecValue(a, s, index)
 	am := make([]byte, 32)
-	// if witness == 1 {
-	// 	copy(am, a[:])
-	// } else {
-	// 	copy(am, pro.witnesses[indexInt])
-	// }
+	if witness.Cmp(big.NewInt(1)) == 0 {
+		copy(am, a[:])
+	} else {
+		copy(am, pro.witnesses[indexInt])
+	}
 	fmt.Printf("a: %v\n", a)
 	fmt.Printf("am: %v\n", am)
 
