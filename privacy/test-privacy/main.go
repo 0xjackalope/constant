@@ -126,4 +126,5 @@ func main() {
 	// fmt.Printf("Proof: %+v\n", proof)
 
 	// fmt.Println(zk.Verify(*proof, coin.CoinCommitment))
+
 }
