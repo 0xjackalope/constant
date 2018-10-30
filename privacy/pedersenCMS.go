@@ -160,9 +160,14 @@ func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	}
 
 	// convert result from Elliptic to bytes array
-	return (CompressKey(commitment))
+	// append type commitment into the first byte
+	var res []byte
+	res = append(res, FULL_CM)
+	res = append(res, CompressKey(commitment)...)
+	return res
 }
 
+// CommitSpecValue commits specific value with index and returns 34 bytes
 func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
@@ -171,6 +176,10 @@ func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
 	temp.X, temp.Y = Curve.ScalarMult(com.G[index].X, com.G[index].Y, value)
 	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
-	// convert result from Elliptic Point to bytes array
-	return (CompressKey(commitment))
+
+	//append type commitment into the first byte
+	var res []byte
+	res = append(res, index)
+	res = append(res, CompressKey(commitment)...)
+	return res
 }

@@ -31,8 +31,8 @@ func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKC
 	// Check index
 	indexInt := int(index)
 	fmt.Printf("index int: %v\n", indexInt)
-	if indexInt < 0 || indexInt > 3 {
-		return nil, fmt.Errorf("index must be between 0 and 3")
+	if indexInt < 0 || indexInt > 2 {
+		return nil, fmt.Errorf("index must be between 0 and 2")
 	}
 
 	// Check value's witnessth is zero or one
@@ -52,12 +52,12 @@ func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKC
 	t := RandBytes(32)
 
 	// Calculate ca, cb
-	proof.ca = make([]byte, 33)
+	proof.ca = make([]byte, 34)
 	proof.ca = Pcm.CommitSpecValue(a, s, index)
 	am := big.NewInt(0)
 	am.Mul(new(big.Int).SetBytes(a), witness)
 
-	proof.cb = make([]byte, 33)
+	proof.cb = make([]byte, 34)
 	proof.cb = Pcm.CommitSpecValue(am.Bytes(), t, index)
 
 	// Calculate x = hash (G0||G1||G2||G3||ca||cb)
@@ -100,7 +100,7 @@ func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKC
 // Verify verifies the proof for commitment to zero or one
 func (pro *PKComZeroOneProtocol) Verify(proof *PKComZeroOneProof, commitmentValue []byte, index byte) bool {
 	//Decompress commitment  value
-	comPoint, err := DecompressKey(commitmentValue)
+	comPoint, err := DecompressCommitment(commitmentValue)
 	if err != nil {
 		fmt.Printf("Can not decompress commitment value to ECC point")
 		return false
@@ -112,12 +112,12 @@ func (pro *PKComZeroOneProtocol) Verify(proof *PKComZeroOneProof, commitmentValu
 	x.Mod(x, Curve.Params().N)
 
 	// Decompress ca, cb of proof
-	caPoint, err := DecompressKey(proof.ca)
+	caPoint, err := DecompressCommitment(proof.ca)
 	if err != nil {
 		fmt.Printf("Can not decompress proof ca to ECC point")
 		return false
 	}
-	cbPoint, err := DecompressKey(proof.cb)
+	cbPoint, err := DecompressCommitment(proof.cb)
 	if err != nil {
 		fmt.Printf("Can not decompress proof cb to ECC point")
 		return false
@@ -130,7 +130,7 @@ func (pro *PKComZeroOneProtocol) Verify(proof *PKComZeroOneProof, commitmentValu
 
 	// Calculate rightPoint1 = Com(f, za)
 	rightValue1 := Pcm.CommitSpecValue(proof.f, proof.za, index)
-	rightPoint1, err := DecompressKey(rightValue1)
+	rightPoint1, err := DecompressCommitment(rightValue1)
 	if err != nil {
 		fmt.Printf("Can not decompress comitment for f")
 		return false
@@ -146,7 +146,7 @@ func (pro *PKComZeroOneProtocol) Verify(proof *PKComZeroOneProof, commitmentValu
 
 	// Calculate rightPoint1 = Com(0, zb)
 	rightValue2 := Pcm.CommitSpecValue(big.NewInt(0).Bytes(), proof.zb, index)
-	rightPoint2, err := DecompressKey(rightValue2)
+	rightPoint2, err := DecompressCommitment(rightValue2)
 	if err != nil {
 		fmt.Printf("Can not decompress comitment for zero")
 		return false

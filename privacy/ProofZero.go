@@ -79,7 +79,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	}
 
 	//convert commitmentZeroS (a.k.a B) to Point in ECC
-	commitmentZeroSPoint, err := DecompressKey(commitmentZeroS)
+	commitmentZeroSPoint, err := DecompressCommitment(commitmentZeroS)
 	if err != nil {
 		return false
 	}
@@ -106,7 +106,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 	commitmentZeroZ := Pcm.CommitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
 
 	//convert result to point
-	commitmentZeroZPoint, err := DecompressKey(commitmentZeroZ)
+	commitmentZeroZPoint, err := DecompressCommitment(commitmentZeroZ)
 	if err != nil {
 		return false
 	}
@@ -149,12 +149,12 @@ func TestProofIsZero() bool {
 	committemp2 := Pcm.CommitSpecValue(serialNumber, r2, 0)
 
 	//Converting them to ECC Point
-	committemp1Point, err := DecompressKey(committemp1)
+	committemp1Point, err := DecompressCommitment(committemp1)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false
 	}
-	committemp2Point, err := DecompressKey(committemp2)
+	committemp2Point, err := DecompressCommitment(committemp2)
 	if err != nil {
 		fmt.Println(err.Error())
 		return false

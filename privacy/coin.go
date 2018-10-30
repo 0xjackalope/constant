@@ -9,10 +9,10 @@ type Value []byte          //32 bytes4
 
 // Check type of commitments
 const (
-	FULL_CM  = byte(0x00)
-	PK_CM    = byte(0x01)
-	VALUE_CM = byte(0x02)
-	SN_CM    = byte(0x03)
+	PK_CM    = byte(0x00)
+	VALUE_CM = byte(0x01)
+	SN_CM    = byte(0x02)
+	FULL_CM  = byte(0x03)
 )
 
 // Coin represents a coin
