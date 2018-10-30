@@ -14,7 +14,7 @@ type PedersenCommitment interface {
 	InitCommitment() *PCParams
 	// CommitAll commits
 	Commit([CM_CAPACITY][]byte) []byte
-	GetHashOfValues([]byte) []byte
+	getHashOfValues([]byte) []byte
 	CommitSpecValue([]byte, []byte, byte) []byte
 }
 
@@ -46,7 +46,7 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 		hashMachine := blake2b.New256()
 		hashMachine.Write(res.X.Bytes())
 		res.X.SetBytes(hashMachine.Sum(nil))
-		res.Y = ComputeYCoord(res.X)
+		res.Y = computeYCoord(res.X)
 		if (res.Y != nil) && (Curve.IsOnCurve(res.X, res.Y)) {
 			break
 		}
@@ -62,22 +62,23 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 	return *res
 }
 
-//GetHashOfValues get blake2b(G0||G1||G2||G3||<inputs>)
-func (com PCParams) GetHashOfValues(values [][]byte) []byte {
-	hashFunc := blake2b.New256()
-	appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
-	appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
+//GetHashOfValues get hash of n points in G append with input values
+func (com PCParams) getHashOfValues(values [][]byte) []byte {
+	appendStr := CompressKey(Pcm.G[0])
+	for i := 1; i < CM_CAPACITY; i++ {
+		appendStr = append(appendStr, CompressKey(Pcm.G[i])...)
+	}
 	for i := 0; i < len(values); i++ {
 		appendStr = append(appendStr, values[i]...)
 	}
+	hashFunc := blake2b.New256()
 	hashFunc.Write(appendStr)
 	hashValue := hashFunc.Sum(nil)
 	return hashValue
 }
 
 //ComputeYCoord calculates Y coord from X
-func ComputeYCoord(x *big.Int) *big.Int {
+func computeYCoord(x *big.Int) *big.Int {
 	Q := Curve.Params().P
 	temp := new(big.Int)
 	xTemp := new(big.Int)
@@ -158,10 +159,11 @@ func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
-	temp.X, temp.Y = Curve.ScalarMult(com.G[0].X, com.G[0].Y, sRnd)
+	temp = EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	temp.X, temp.Y = Curve.ScalarMult(com.G[CM_CAPACITY-1].X, com.G[CM_CAPACITY-1].Y, sRnd)
 	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
-	temp.X, temp.Y = Curve.ScalarMult(com.G[index].X, com.G[index].Y, sRnd)
+	temp.X, temp.Y = Curve.ScalarMult(com.G[index].X, com.G[index].Y, value)
 	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
-	// convert result from Elliptic to bytes array
+	// convert result from Elliptic Point to bytes array
 	return (CompressKey(commitment))
 }

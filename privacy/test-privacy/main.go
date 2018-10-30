@@ -105,6 +105,56 @@ func main() {
 	}
 	coin.CommitAll()
 	fmt.Println(coin.CoinCommitment)
+
+	r1Int := big.NewInt(0)
+	r2Int := big.NewInt(0)
+	r1 := privacy.RandBytes(32)
+	r2 := privacy.RandBytes(32)
+	r1Int.SetBytes(r1)
+	r2Int.SetBytes(r2)
+	r1Int.Mod(r1Int, privacy.Curve.Params().P)
+	r2Int.Mod(r2Int, privacy.Curve.Params().P)
+	r1 = r1Int.Bytes()
+	r2 = r2Int.Bytes()
+	committemp1 := privacy.Pcm.CommitSpecValue(serialNumber, r1, 0)
+	committemp2 := privacy.Pcm.CommitSpecValue(serialNumber, r2, 0)
+	fmt.Println(committemp1)
+	fmt.Println(committemp2)
+	committemp1Point, err := privacy.DecompressKey(committemp1)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	committemp2Point, err := privacy.DecompressKey(committemp2)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	tempInt := big.NewInt(-1)
+	committemp2Point.X, committemp2Point.Y = privacy.Curve.ScalarMult(committemp2Point.X, committemp2Point.Y, tempInt.Bytes())
+
+	r1Int.Sub(r1Int, r2Int)
+	zeroInt := big.NewInt(0)
+	if r1Int.Cmp(zeroInt) < 0 {
+		r1Int.Mod(r1Int, privacy.Curve.Params().P)
+	}
+
+	negcommittemp2Point := new(privacy.EllipticPoint)
+	negcommittemp2Point.X = big.NewInt(0)
+	negcommittemp2Point.Y = big.NewInt(0)
+	negcommittemp2Point.X.SetBytes(committemp2Point.X.Bytes())
+	negcommittemp2Point.Y.SetBytes(committemp2Point.Y.Bytes())
+	negcommittemp2Point.Y.Sub(privacy.Curve.Params().P, committemp2Point.Y)
+
+	//negcommittemp2Point.X, negcommittemp2Point.Y = privacy.Curve.Add(negcommittemp2Point.X, negcommittemp2Point.Y, committemp2Point.X, committemp2Point.Y)
+
+	committemp1Point.X, committemp1Point.Y = privacy.Curve.Add(committemp1Point.X, committemp1Point.Y, committemp2Point.X, committemp2Point.Y)
+	commitZero := privacy.CompressKey(*committemp1Point)
+	proofZero, z := privacy.ProveIsZero(commitZero, r1Int.Bytes(), 0)
+	boolValue := privacy.VerifyIsZero(commitZero, proofZero, 0, z)
+	fmt.Println(boolValue)
+	fmt.Println("Done")
 	// cm1 := coin.CommitPublicKey()
 	// fmt.Println(cm1)
 	// cm2 := coin.CommitValue()
@@ -125,14 +175,14 @@ func main() {
 	pk.SetWitness(witness)
 	pk.Prove(coin.CoinCommitment, 1)
 
-	// var zk privacy.ZKProtocols
+	var zk privacy.PKComValProtocol
 
 	// pk := zk.GetPKCommittedValues()
-	// pk.SetWitness(witness)
-	// proof, _ := zk.GetPKCommittedValues().Prove(coin.CoinCommitment)
+	zk.SetWitness(witness)
+	proof, _ := zk.Prove(coin.CoinCommitment)
 
-	// fmt.Printf("Proof: %+v\n", proof)
+	fmt.Printf("Proof: %+v\n", proof)
 
-	// fmt.Println(zk.GetPKCommittedValues().Verify(*proof, coin.CoinCommitment))
+	fmt.Println(zk.Verify(*proof, coin.CoinCommitment))
 
 }
