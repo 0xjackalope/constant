@@ -39,11 +39,11 @@ type Tx struct {
 	sigPrivKey *client.PrivateKey
 }
 
-func (tx *Tx) SetTxId(txId *common.Hash) {
+func (tx *Tx) SetTxID(txId *common.Hash) {
 	tx.txId = txId
 }
 
-func (tx *Tx) GetTxId() *common.Hash {
+func (tx *Tx) GetTxID() *common.Hash {
 	return tx.txId
 }
 
@@ -72,7 +72,7 @@ func (tx *Tx) ValidateTransaction() bool {
 	return true
 
 	// Check for tx signature
-	tx.SetTxId(tx.Hash())
+	tx.SetTxID(tx.Hash())
 	valid, err := VerifySign(tx)
 	if valid == false {
 		if err != nil {
@@ -588,8 +588,8 @@ func SignTx(tx *Tx) (*Tx, error) {
 	}
 
 	// Hash transaction
-	tx.SetTxId(tx.Hash())
-	hash := tx.GetTxId()
+	tx.SetTxID(tx.Hash())
+	hash := tx.GetTxID()
 	data := make([]byte, common.HashSize)
 	copy(data, hash[:])
 
@@ -624,7 +624,7 @@ func VerifySign(tx *Tx) (bool, error) {
 	ecdsaSignature.S = new(big.Int).SetBytes(tx.JSSig[32:64])
 
 	// Hash origin transaction
-	hash := tx.GetTxId()
+	hash := tx.GetTxID()
 	data := make([]byte, common.HashSize)
 	copy(data, hash[:])
 
