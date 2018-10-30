@@ -37,26 +37,38 @@ func ProveIsZero(commitmentValue, commitmentRnd []byte, index byte) ([]byte, *bi
 	if err != nil {
 		panic(err)
 	}
-	sRnd.Bytes()
+
+	//Generate zero number to commit
 	zeroInt := big.NewInt(0)
+
+	//Calculate B = commitmentZeroS = comm_ck(0,s,index)
 	commitmentZeroS := Pcm.CommitSpecValue(zeroInt.Bytes(), sRnd.Bytes(), index)
+
+	//Generate random x in Zp
 	xRnd := big.NewInt(0)
 	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
 	xRnd.Mod(xRnd, Curve.Params().P)
+
+	//Calculate z=r*x + s (mod p)
 	z := big.NewInt(0)
 	z.SetBytes(commitmentRnd)
 	z.Mul(z, xRnd)
 	z.Mod(z, Curve.Params().P)
 	z.Add(z, sRnd)
 	z.Mod(z, Curve.Params().P)
+
+	//return B, z
 	return commitmentZeroS, z
 }
 
 //VerifyIsZero verify that under commitment is zero
 func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.Int) bool {
+	//Calculate x
 	xRnd := big.NewInt(0)
 	xRnd.SetBytes(Pcm.GetHashOfValues([][]byte{commitmentValue}))
 	xRnd.Mod(xRnd, Curve.Params().P)
+
+	//convert commitmentValue []byte to Point in ECC
 	commitmentValuePoint, err := DecompressKey(commitmentValue)
 	if err != nil {
 		return false
@@ -65,6 +77,7 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 		return false
 	}
 
+	//convert commitmentZeroS (a.k.a B) to Point in ECC
 	commitmentZeroSPoint, err := DecompressKey(commitmentZeroS)
 	if err != nil {
 		return false
@@ -73,22 +86,30 @@ func VerifyIsZero(commitmentValue, commitmentZeroS []byte, index byte, z *big.In
 		return false
 	}
 
-	zeroInt := big.NewInt(0)
-	commitmentZeroZ := Pcm.CommitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
+	//verifyPoint is result of A.x + B (in ECC)
 	verifyPoint := new(EllipticPoint)
 	verifyPoint.X = big.NewInt(0)
 	verifyPoint.Y = big.NewInt(0)
+	//Set verifyPoint = A
 	verifyPoint.X.SetBytes(commitmentValuePoint.X.Bytes())
 	verifyPoint.Y.SetBytes(commitmentValuePoint.Y.Bytes())
+	//verifyPoint = verifyPoint.x
 	verifyPoint.X, verifyPoint.Y = Curve.ScalarMult(verifyPoint.X, verifyPoint.Y, xRnd.Bytes())
-
+	//verifyPoint = verifyPoint + B
 	verifyPoint.X, verifyPoint.Y = Curve.Add(verifyPoint.X, verifyPoint.Y, commitmentZeroSPoint.X, commitmentZeroSPoint.Y)
 
+	//Generate Zero number
+	zeroInt := big.NewInt(0)
+
+	//Calculate comm_ck(0,z, index)
+	commitmentZeroZ := Pcm.CommitSpecValue(zeroInt.Bytes(), z.Bytes(), index)
+
+	//convert result to point
 	commitmentZeroZPoint, err := DecompressKey(commitmentZeroZ)
 	if err != nil {
 		return false
 	}
-	if (!Curve.IsOnCurve(commitmentZeroSPoint.X, commitmentZeroSPoint.Y)) || (z.Cmp(Curve.Params().P) > -1) {
+	if (!Curve.IsOnCurve(commitmentZeroZPoint.X, commitmentZeroZPoint.Y)) || (z.Cmp(Curve.Params().P) > -1) {
 		return false
 	}
 
