@@ -15,6 +15,7 @@ import (
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
+	"github.com/ninjadotorg/cash/privacy/client"
 )
 
 // TxTokenVin ...
@@ -178,7 +179,7 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 	var value uint64
 	for _, p := range paymentInfo {
 		value += p.Amount
-		fmt.Printf("[CreateTx] paymentInfo.Value: %+v, paymentInfo.Apk: %x\n", p.Amount, p.PaymentAddress.Apk)
+		fmt.Printf("[CreateTx] paymentInfo.Value: %+v, paymentInfo.Apk: %x\n", p.Amount, p.PaymentAddress.Pk)
 	}
 
 	type ChainNote struct {
@@ -210,7 +211,7 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 	}
 
 	senderFullKey := cashec.KeySet{}
-	senderFullKey.ImportFromPrivateKeyByte(senderKey[:])
+	senderFullKey.ImportFromPrivateKeyByte((*senderKey)[:])
 
 	// Create tx before adding js descs
 	tx, err := CreateEmptyCustomTokenTx()
@@ -219,7 +220,7 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 	}
 	tempKeySet := cashec.KeySet{}
 	tempKeySet.ImportFromPrivateKey(senderKey)
-	lastByte := tempKeySet.PublicKey.Apk[len(tempKeySet.PublicKey.Apk)-1]
+	lastByte := tempKeySet.PaymentAddress.Pk[len(tempKeySet.PaymentAddress.Pk)-1]
 	tx.Tx.AddressLastByte = lastByte
 	var latestAnchor map[byte][]byte
 
@@ -242,7 +243,9 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 			input := &client.JSInput{}
 			chainNote := inputNotes[len(inputNotes)-1] // Get note with largest value
 			input.InputNote = chainNote.note
-			input.Key = senderKey
+			var temp1 client.SpendingKey
+			copy(temp1[:], (*senderKey)[:])
+			input.Key = &temp1
 			inputs[chainNote.chainID] = append(inputs[chainNote.chainID], input)
 			inputsToBuildWitness[chainNote.chainID] = append(inputsToBuildWitness[chainNote.chainID], input)
 			inputValue += input.InputNote.Value
@@ -269,7 +272,9 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 		for numInputNotes < NumDescInputs {
 			input := &client.JSInput{}
 			input.InputNote = createDummyNote(senderKey)
-			input.Key = senderKey
+			var temp1 client.SpendingKey
+			copy(temp1[:], (*senderKey)[:])
+			input.Key = &temp1
 			input.WitnessPath = (&client.MerklePath{}).CreateDummyPath() // No need to build commitment merkle path for dummy note
 			dummyNoteChainID := senderChainID                            // Dummy note's chain is the same as sender's
 			inputs[dummyNoteChainID] = append(inputs[dummyNoteChainID], input)
@@ -319,43 +324,48 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 		for len(paymentInfo) > 0 && len(outputs) < NumDescOutputs-1 && inputValue > 0 { // Leave out 1 output note for change
 			p := paymentInfo[len(paymentInfo)-1]
 			var outNote *client.Note
-			var encKey client.TransmissionKey
+			var encKey []byte
 			if p.Amount <= inputValue { // Enough for one more output note, include it
-				outNote = &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Apk}
-				encKey = p.PaymentAddress.Pkenc
+				outNote = &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Pk}
+				encKey = p.PaymentAddress.Tk
 				inputValue -= p.Amount
 				paymentInfo = paymentInfo[:len(paymentInfo)-1]
 				fmt.Printf("Use output value %+v => %x\n", outNote.Value, outNote.Apk)
 			} else { // Not enough for this note, send some and save the rest for next js desc
-				outNote = &client.Note{Value: inputValue, Apk: p.PaymentAddress.Apk}
-				encKey = p.PaymentAddress.Pkenc
+				outNote = &client.Note{Value: inputValue, Apk: p.PaymentAddress.Pk}
+				encKey = p.PaymentAddress.Tk
 				paymentInfo[len(paymentInfo)-1].Amount = p.Amount - inputValue
 				inputValue = 0
 				fmt.Printf("Partially send %+v to %x\n", outNote.Value, outNote.Apk)
 			}
-
-			output := &client.JSOutput{EncKey: encKey, OutputNote: outNote}
+			var temp client.TransmissionKey
+			copy(temp[:], encKey[:])
+			output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
 			outputs = append(outputs, output)
 		}
 
 		if inputValue > 0 {
 			// Still has some room left, check if one more output note is possible to add
-			var p *client.PaymentInfo
+			var p *privacy.PaymentInfo
 			if len(paymentInfo) > 0 {
 				p = paymentInfo[len(paymentInfo)-1]
 			}
 
 			if p != nil && p.Amount == inputValue {
 				// Exactly equal, add this output note to js desc
-				outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Apk}
-				output := &client.JSOutput{EncKey: p.PaymentAddress.Pkenc, OutputNote: outNote}
+				outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Pk}
+				var temp client.TransmissionKey
+				copy(temp[:], p.PaymentAddress.Tk[:])
+				output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
 				outputs = append(outputs, output)
 				paymentInfo = paymentInfo[:len(paymentInfo)-1]
 				fmt.Printf("Exactly enough, include 1 more output %+v, %x\n", outNote.Value, outNote.Apk)
 			} else {
 				// Cannot put the output note into this js desc, create a change note instead
-				outNote := &client.Note{Value: inputValue, Apk: senderFullKey.PublicKey.Apk}
-				output := &client.JSOutput{EncKey: senderFullKey.PublicKey.Pkenc, OutputNote: outNote}
+				outNote := &client.Note{Value: inputValue, Apk: senderFullKey.PaymentAddress.Pk}
+				var temp client.TransmissionKey
+				copy(temp[:], p.PaymentAddress.Tk[:])
+				output := &client.JSOutput{EncKey: temp, OutputNote: outNote}
 				outputs = append(outputs, output)
 				fmt.Printf("Create change outnote %+v, %x\n", outNote.Value, outNote.Apk)
 
