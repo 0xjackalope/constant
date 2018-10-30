@@ -181,7 +181,7 @@ func TestProofIsZero() bool {
 	commitZero := CompressKey(resPoint)
 
 	//Compute proof
-	proofZero, z := ProveIsZero(commitZero, r1Int.Bytes(), 0)
+	proofZero, z := ProveIsZero(commitZero, rInt.Bytes(), 0)
 
 	//verify proof
 	boolValue := VerifyIsZero(commitZero, proofZero, 0, z)
