@@ -89,7 +89,12 @@ func main() {
 
 	pubKey := privacy.GeneratePublicKey(spendingKey)
 	serialNumber := privacy.RandBytes(32)
-	value := []byte("10")
+
+	// value := make([]byte, 32)
+	c := big.NewInt(0)
+	value := c.Bytes()
+	// binary.LittleEndian.PutUint32(value, 1)
+	fmt.Printf("Value: %v\n", value)
 	r := privacy.RandBytes(32)
 	coin := privacy.Coin{
 		PublicKey:      pubKey,
@@ -109,12 +114,16 @@ func main() {
 
 	// witnesses := make([][]byte, privacy.CM_CAPACITY)
 
-	// witness := [][]byte{
-	// 	coin.PublicKey,
-	// 	coin.Value,
-	// 	coin.SerialNumber,
-	// 	coin.R,
-	// }
+	witness := [][]byte{
+		coin.PublicKey,
+		coin.Value,
+		coin.SerialNumber,
+		coin.R,
+	}
+
+	var pk privacy.PKComZeroOneProtocol
+	pk.SetWitness(witness)
+	pk.Prove(coin.CoinCommitment, 1)
 
 	// var zk privacy.ZKProtocols
 
@@ -125,4 +134,5 @@ func main() {
 	// fmt.Printf("Proof: %+v\n", proof)
 
 	// fmt.Println(zk.GetPKCommittedValues().Verify(*proof, coin.CoinCommitment))
+
 }
