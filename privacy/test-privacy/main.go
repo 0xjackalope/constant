@@ -82,7 +82,8 @@ func main() {
 	//fmt.Println(xx.CommitAll(m))
 
 	privacy.Pcm.InitCommitment()
-
+	privacy.TestProofIsZero()
+	fmt.Println("Done")
 	// spendingKey := privacy.GenerateSpendingKey(new(big.Int).SetInt64(123).Bytes())
 	// fmt.Printf("\nSpending key: %v\n", spendingKey)
 
@@ -99,8 +100,7 @@ func main() {
 	// }
 	// coin.CommitAll()
 	// fmt.Println(coin.CoinCommitment)
-	privacy.TestProofIsZero()
-	fmt.Println("Done")
+
 	// cm1 := coin.CommitPublicKey()
 	// fmt.Println(cm1)
 	// cm2 := coin.CommitValue()
@@ -117,15 +117,7 @@ func main() {
 	// 	coin.R,
 	// }
 
-<<<<<<< HEAD
 	// var zk privacy.PKComValProtocol
-=======
-	var pk privacy.PKComZeroOneProtocol
-	pk.SetWitness(witness)
-	pk.Prove(coin.CoinCommitment, 1)
-
-	var zk privacy.PKComValProtocol
->>>>>>> 01a65d6ece6facfc7eb713d0a31e89179be1c8c3
 
 	// // pk := zk.GetPKCommittedValues()
 	// zk.SetWitness(witness)
@@ -133,10 +125,5 @@ func main() {
 
 	// fmt.Printf("Proof: %+v\n", proof)
 
-<<<<<<< HEAD
 	// fmt.Println(zk.Verify(*proof, coin.CoinCommitment))
-=======
-	fmt.Println(zk.Verify(*proof, coin.CoinCommitment))
-
->>>>>>> 01a65d6ece6facfc7eb713d0a31e89179be1c8c3
 }
