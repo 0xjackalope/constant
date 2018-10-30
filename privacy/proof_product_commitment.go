@@ -173,4 +173,5 @@ func VerifyProductCommitment (proof ProofOfProductCommitment) bool {
 	if (com1.X.Cmp(pts1.X)==1 && com1.Y.Cmp(pts1.Y)==1){
 		return true;
 		}
+	return false;
 }

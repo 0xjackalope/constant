@@ -6,6 +6,13 @@ import (
 	"github.com/minio/blake2b-simd"
 )
 
+const (
+	PK    = 0
+	VALUE = 1
+	SN    = 2
+	RAND  = 3
+)
+
 // PedersenCommitment represents a commitment that includes 4 generators
 type PedersenCommitment interface {
 	// Params returns the parameters for the commitment
@@ -145,8 +152,8 @@ func (com *PCParams) InitCommitment() {
 
 // Commit commits a list of CM_CAPACITY value(s)
 func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
-	var commitment, temp EllipticPoint
-	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	temp := EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	commitment := EllipticPoint{big.NewInt(0), big.NewInt(0)}
 	for i := 0; i < CM_CAPACITY; i++ {
 		temp.X, temp.Y = Curve.ScalarMult(com.G[i].X, com.G[i].Y, values[i])
 		commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
