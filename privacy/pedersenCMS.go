@@ -7,6 +7,13 @@ import (
 	"github.com/minio/blake2b-simd"
 )
 
+const (
+	PK    = 0
+	VALUE = 1
+	SN    = 2
+	RAND  = 3
+)
+
 // PedersenCommitment represents a commitment that includes 4 generators
 type PedersenCommitment interface {
 	// Params returns the parameters for the commitment
@@ -22,7 +29,7 @@ type PedersenCommitment interface {
 
 // PCParams represents the parameters for the commitment
 type PCParams struct {
-	G [CM_CAPACITY]EllipticPoint // generators
+	G[CM_CAPACITY]EllipticPoint // generators
 	// G[0]: public key
 	// G[1]: Value
 	// G[2]: SerialNumber
@@ -148,18 +155,26 @@ func (com *PCParams) InitCommitment() {
 
 // Commit commits a list of CM_CAPACITY value(s)
 func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
-	var commitment, temp EllipticPoint
-	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	temp := EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	commitment := EllipticPoint{big.NewInt(0), big.NewInt(0)}
 	for i := 0; i < CM_CAPACITY; i++ {
 		temp.X, temp.Y = Curve.ScalarMult(com.G[i].X, com.G[i].Y, values[i])
 		commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
 	}
 
 	// convert result from Elliptic to bytes array
-	return (CompressKey(commitment))
+	// append type commitment into the first byte
+	var res []byte
+	res = append(res, FULL_CM)
+	res = append(res, CompressKey(commitment)...)
+	return res
 }
 
+<<<<<<< HEAD
 //CommitSpecValue allow commit a value with special index in list G params
+=======
+// CommitSpecValue commits specific value with index and returns 34 bytes
+>>>>>>> 4441f65b5d6aee017dc33dda934bd9422c286c33
 func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
@@ -168,8 +183,12 @@ func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
 	temp.X, temp.Y = Curve.ScalarMult(com.G[index].X, com.G[index].Y, value)
 	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
-	// convert result from Elliptic Point to bytes array
-	return (CompressKey(commitment))
+
+	//append type commitment into the first byte
+	var res []byte
+	res = append(res, index)
+	res = append(res, CompressKey(commitment)...)
+	return res
 }
 
 //testFunction allow we test each of function for PedersenCommitment

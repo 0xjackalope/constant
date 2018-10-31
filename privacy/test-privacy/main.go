@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/ninjadotorg/cash/privacy"
 )
 
@@ -57,73 +55,8 @@ func main() {
 	//tx, _ := transaction.CreateEmptyTxs()
 	//fmt.Printf("Transaction: %+v\n", tx)
 
-	//a := "aaaaaaaaaaaaaaaaa"
-
-	// //var b privacy.PedersenCommitment
-	//var xx privacy.PCParams
-	//xx.InitCommitment()
-	//
-	//var sn privacy.SerialNumber
-	//var v privacy.Value
-	//sn = []byte("aaaaaaa")
-	//v = []byte("bbbbbbb")
-	//
-	//m := make(map[string][]byte)
-	//
-	////m["sn"] = sn
-	////m["v"] = v
-	//m = map[string][]byte{
-	//	"sn": sn,
-	//	"v": v,
-	//}
-	//fmt.Printf("m['sn']: %+v\n", m["sn"])
-	//fmt.Printf("m['v']: %+v\n", m["v"])
-	//
-	//fmt.Println(xx.CommitAll(m))
-
-	privacy.Pcm.InitCommitment()
-	privacy.TestProofIsZero()
-	fmt.Println("Done")
-	// spendingKey := privacy.GenerateSpendingKey(new(big.Int).SetInt64(123).Bytes())
-	// fmt.Printf("\nSpending key: %v\n", spendingKey)
-
-	// pubKey := privacy.GeneratePublicKey(spendingKey)
-	// serialNumber := privacy.RandBytes(32)
-	// value := []byte("10")
-	// r := privacy.RandBytes(32)
-	// coin := privacy.Coin{
-	// 	PublicKey:      pubKey,
-	// 	SerialNumber:   serialNumber,
-	// 	CoinCommitment: nil,
-	// 	R:              r,
-	// 	Value:          value,
-	// }
-	// coin.CommitAll()
-	// fmt.Println(coin.CoinCommitment)
-
-	// cm1 := coin.CommitPublicKey()
-	// fmt.Println(cm1)
-	// cm2 := coin.CommitValue()
-	// fmt.Println(cm2)
-	// cm3 := coin.CommitSerialNumber()
-	// fmt.Println(cm3)
-
-	// witnesses := make([][]byte, privacy.CM_CAPACITY)
-
-	// witness := [][]byte{
-	// 	coin.PublicKey,
-	// 	coin.Value,
-	// 	coin.SerialNumber,
-	// 	coin.R,
-	// }
-
-	// var zk privacy.PKComValProtocol
-
-	// // pk := zk.GetPKCommittedValues()
-	// zk.SetWitness(witness)
-	// proof, _ := zk.Prove(coin.CoinCommitment)
-
-	// fmt.Printf("Proof: %+v\n", proof)
-
-	// fmt.Println(zk.Verify(*proof, coin.CoinCommitment))
+	//privacy.Pcm.InitCommitment()
+	// privacy.TestProofIsZero()
+	// fmt.Println("Done")
+	privacy.TestPKComZeroOne()
 }
