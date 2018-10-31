@@ -60,4 +60,12 @@ func main() {
 	//
 	//privacy.TestPKComZeroOne()
 	privacy.TestProductCommitment()
+	//privacy.Pcm.InitCommitment()
+	// privacy.TestProofIsZero()
+	// fmt.Println("Done")
+	// privacy.TestPKComZeroOne()
+	//privacy.TestPKOneOfMany()
+
+	// fmt.Println(privacy.ConvertAsciiToInt(49))
+
 }

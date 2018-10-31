@@ -23,3 +23,23 @@ func inversePoint(eccPoint EllipticPoint) (*EllipticPoint, error) {
 
 	return resPoint, nil
 }
+
+// IsPowerOfTwo checks whether n is power of two or not
+func IsPowerOfTwo(n int) bool {
+	if n < 2 {
+		return false
+	}
+	for n > 2 {
+		if n%2 == 0 {
+			n = n / 2
+		} else {
+			return false
+		}
+	}
+	return true
+
+}
+
+func ConvertAsciiToInt(c uint8) byte {
+	return byte(c - 48)
+}
