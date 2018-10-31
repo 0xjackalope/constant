@@ -60,9 +60,9 @@ func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKC
 	proof.cb = make([]byte, 34)
 	proof.cb = Pcm.CommitSpecValue(am.Bytes(), t, index)
 
-	// Calculate x = hash (G0||G1||G2||G3||ca||cb)
+	// Calculate x = hash (G0||G1||G2||G3||ca||cb||cm)
 	x := big.NewInt(0)
-	x.SetBytes(Pcm.getHashOfValues([][]byte{proof.ca, proof.cb}))
+	x.SetBytes(Pcm.getHashOfValues([][]byte{proof.ca, proof.cb, commitmentValue}))
 	x.Mod(x, Curve.Params().N)
 
 	// Calculate f = mx + a
@@ -106,9 +106,9 @@ func (pro *PKComZeroOneProtocol) Verify(proof *PKComZeroOneProof, commitmentValu
 		return false
 	}
 
-	// Calculate x = hash (G0||G1||G2||G3||ca||cb)
+	// Calculate x = hash (G0||G1||G2||G3||ca||cb||cm)
 	x := big.NewInt(0)
-	x.SetBytes(Pcm.getHashOfValues([][]byte{proof.ca, proof.cb}))
+	x.SetBytes(Pcm.getHashOfValues([][]byte{proof.ca, proof.cb, commitmentValue}))
 	x.Mod(x, Curve.Params().N)
 
 	// Decompress ca, cb of proof

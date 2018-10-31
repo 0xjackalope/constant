@@ -6,13 +6,6 @@ import (
 	"github.com/minio/blake2b-simd"
 )
 
-const (
-	PK    = 0
-	VALUE = 1
-	SN    = 2
-	RAND  = 3
-)
-
 // PedersenCommitment represents a commitment that includes 4 generators
 type PedersenCommitment interface {
 	// Params returns the parameters for the commitment
@@ -27,7 +20,7 @@ type PedersenCommitment interface {
 
 // PCParams represents the parameters for the commitment
 type PCParams struct {
-	G[CM_CAPACITY]EllipticPoint // generators
+	G [CM_CAPACITY]EllipticPoint // generators
 	// G[0]: public key
 	// G[1]: Value
 	// G[2]: SerialNumber
