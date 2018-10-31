@@ -1,7 +1,6 @@
 package privacy
 
 import (
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"fmt"
@@ -9,9 +8,6 @@ import (
 
 	"github.com/ninjadotorg/cash/common"
 )
-
-// Curve P256
-var Curve = elliptic.P256()
 
 // var curve *elliptic.Curve
 // var once sync.Once
@@ -55,11 +51,6 @@ type ReceivingKey []byte
 
 // Tk 33 bytes
 type TransmissionKey []byte
-
-// EllipticPoint represents an point of ellipctic
-type EllipticPoint struct {
-	X, Y *big.Int
-}
 
 // ViewingKey represents an key that be used to view transactions
 type ViewingKey struct {
