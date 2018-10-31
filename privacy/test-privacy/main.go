@@ -1,9 +1,5 @@
 package main
 
-import (
-	"github.com/ninjadotorg/cash/privacy"
-)
-
 func main() {
 
 	// fmt.Printf("N: %X\n", privacy.Curve.Params().N)
@@ -58,5 +54,9 @@ func main() {
 	//privacy.Pcm.InitCommitment()
 	// privacy.TestProofIsZero()
 	// fmt.Println("Done")
-	privacy.TestPKComZeroOne()
+	// privacy.TestPKComZeroOne()
+	//privacy.TestPKOneOfMany()
+
+	// fmt.Println(privacy.ConvertAsciiToInt(49))
+
 }

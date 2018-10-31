@@ -29,9 +29,9 @@ func (pro *PKComZeroOneProtocol) SetWitness(witnesses [][]byte) {
 // Prove creates a proof for commitment to zero or one
 func (pro *PKComZeroOneProtocol) Prove(commitmentValue []byte, index byte) (*PKComZeroOneProof, error) {
 	// Check index
-	indexInt := int(index)
-	fmt.Printf("index int: %v\n", indexInt)
-	if indexInt < 0 || indexInt > 2 {
+	// indexInt := int(index)
+	// fmt.Printf("index int: %v\n", indexInt)
+	if index < 0 || index > 2 {
 		return nil, fmt.Errorf("index must be between 0 and 2")
 	}
 

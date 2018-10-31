@@ -163,11 +163,7 @@ func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	return res
 }
 
-<<<<<<< HEAD
 //CommitSpecValue allow commit a value with special index in list G params
-=======
-// CommitSpecValue commits specific value with index and returns 34 bytes
->>>>>>> 4441f65b5d6aee017dc33dda934bd9422c286c33
 func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
