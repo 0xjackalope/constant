@@ -7,7 +7,6 @@ import (
 	"github.com/ninjadotorg/cash/wire"
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
-	"encoding/binary"
 	"time"
 )
 
@@ -153,39 +152,50 @@ func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	if msg.LockTime > time.Now().Unix() {
 		return
 	}
+
+	committee := self.GetCommittee()
+
+	if common.IndexOfStr(msg.RequesterPbk, committee) < 0 {
+		Logger.log.Error("ERROR OnRequestSwap is not existed committee")
+		return
+	}
+
+	rawBytes := self.getRawBytesForSwap(msg.LockTime, msg.RequesterPbk, msg.ChainID, msg.SealerPbk)
+	// TODO check requester signature
+	err := cashec.ValidateDataB58(msg.RequesterPbk, msg.RequesterSig, rawBytes)
+	if err != nil {
+		Logger.log.Info("Received a MessageRequestSwap validate error", err)
+		return
+	}
 	peerIDs := self.config.Server.GetPeerIDsFromPublicKey(msg.SealerPbk)
 	if len(peerIDs) == 0 {
 		return
 	}
-
-	senderID := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
-
-	rawBytes := []byte{}
-	bTime := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bTime, uint64(msg.LockTime))
-	rawBytes = append(rawBytes, bTime...)
-	rawBytes = append(rawBytes, []byte(msg.RequesterPbk)...)
-	rawBytes = append(rawBytes, msg.ChainID)
-	rawBytes = append(rawBytes, []byte(msg.SealerPbk)...)
 
 	sig, err := self.signData(rawBytes)
 	if err != nil {
 		Logger.log.Error("Can't sign swap ", err)
 		return
 	}
-	messageSigMsg := wire.MessageSignSwap{
-		SenderID:     senderID,
-		RequesterPbk: msg.RequesterPbk,
-		Validator:    base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00)),
-		ValidatorSig: sig,
-	}
-	peerID, err := peer2.IDB58Decode(msg.SenderID)
+	messageSigMsg, err := wire.MakeEmptyMessage(wire.CmdSignSwap)
 	if err != nil {
-		Logger.log.Error("ERROR", msg.SenderID, peerID, err)
+		return
 	}
-	err = self.config.Server.PushMessageToPeer(&messageSigMsg, peerID)
-	if err != nil {
-		Logger.log.Error(err)
+	messageSigMsg.(*wire.MessageSignSwap).LockTime = msg.LockTime
+	messageSigMsg.(*wire.MessageSignSwap).RequesterPbk = msg.RequesterPbk
+	messageSigMsg.(*wire.MessageSignSwap).ChainID = msg.ChainID
+	messageSigMsg.(*wire.MessageSignSwap).SealerPbk = msg.SealerPbk
+	messageSigMsg.(*wire.MessageSignSwap).Validator = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+	messageSigMsg.(*wire.MessageSignSwap).ValidatorSig = sig
+
+	peerIDs = self.config.Server.GetPeerIDsFromPublicKey(msg.RequesterPbk)
+	if len(peerIDs) > 0 {
+		for _, peerID := range peerIDs {
+			Logger.log.Infof("sign swap to %s %s", peerID, msg.RequesterPbk)
+			self.config.Server.PushMessageToPeer(messageSigMsg, peerID)
+		}
+	} else {
+		Logger.log.Error("Validator's peer not found!", msg.RequesterPbk)
 	}
 
 	return
@@ -194,12 +204,12 @@ func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 func (self *Engine) OnSignSwap(msg *wire.MessageSignSwap) {
 	Logger.log.Info("Received a MessageSignSwap")
 	self.cSwapSig <- swapSig{
-		LockTime:        msg.LockTime,
-		RequesterPbk:    msg.RequesterPbk,
-		ChainID:         msg.ChainID,
-		SealerPublicKey: msg.SealerPbk,
-		Validator:       msg.Validator,
-		ValidatorSig:    msg.ValidatorSig,
+		LockTime:     msg.LockTime,
+		RequesterPbk: msg.RequesterPbk,
+		ChainID:      msg.ChainID,
+		SealerPbk:    msg.SealerPbk,
+		Validator:    msg.Validator,
+		ValidatorSig: msg.ValidatorSig,
 	}
 	return
 }
@@ -211,8 +221,7 @@ func (self *Engine) OnUpdateSwap(msg *wire.MessageUpdateSwap) {
 		return
 	}
 
-	committee := make([]string, common.TotalValidators)
-	copy(committee, self.GetCommittee())
+	committee := self.GetCommittee()
 
 	if common.IndexOfStr(msg.SealerPbk, committee) >= 0 {
 		Logger.log.Error("ERROR OnUpdateSwap is existed committee")
@@ -220,25 +229,21 @@ func (self *Engine) OnUpdateSwap(msg *wire.MessageUpdateSwap) {
 	}
 
 	//versify signatures
-	rawBytes := []byte{}
-	bTime := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bTime, uint64(msg.LockTime))
-	rawBytes = append(rawBytes, bTime...)
-	rawBytes = append(rawBytes, []byte(msg.RequesterPbk)...)
-	rawBytes = append(rawBytes, msg.ChainID)
-	rawBytes = append(rawBytes, []byte(msg.SealerPbk)...)
+	rawBytes := self.getRawBytesForSwap(msg.LockTime, msg.RequesterPbk, msg.ChainID, msg.SealerPbk)
 	cLeader := 0
 	for leaderPbk, leaderSig := range msg.Signatures {
 		if common.IndexOfStr(leaderPbk, committee) >= 0 {
 			err := cashec.ValidateDataB58(leaderPbk, leaderSig, rawBytes)
 			if err != nil {
 				Logger.log.Error("ERROR OnUpdateSwap", leaderPbk, err)
-				return
+				continue
 			}
+		} else {
+			continue
 		}
 		cLeader += 1
 	}
-	if cLeader < common.TotalValidators/2 {
+	if cLeader < 1 {
 		Logger.log.Error("ERROR OnUpdateSwap not enough signatures")
 		return
 	}

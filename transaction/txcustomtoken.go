@@ -50,14 +50,33 @@ type TxCustomToken struct {
 	TxToken TxToken
 }
 
+type CustomTokenReceiver struct {
+	PubKey string  `json:"PubKey"`
+	Amount float64 `json:"Amount"`
+}
+
 // CustomTokenParamTx ...
 type CustomTokenParamTx struct {
-	PropertyName    string  `json:"TokenName"`
-	PropertySymbol  string  `json:"TokenSymbol"`
-	TxCustomTokenID string  `json:"TokenHash"`
-	Amount          float64 `json:"TokenAmount"`
-	TokenTxType     float64 `json:"TokenTxType"`
-	// Receiver        string  `json:"TokenReceiver"` TO-DO add type
+	PropertyName    string                `json:"TokenName"`
+	PropertySymbol  string                `json:"TokenSymbol"`
+	TxCustomTokenID string                `json:"TokenHash"`
+	Amount          float64               `json:"TokenAmount"`
+	TokenTxType     float64               `json:"TokenTxType"`
+	Receivers       []CustomTokenReceiver `json:"TokenReceivers"`
+}
+
+func CreateCustomTokenReceiverArray(data interface{}) []CustomTokenReceiver {
+	result := make([]CustomTokenReceiver, 0)
+	receivers := data.([]interface{})
+	for _, item := range receivers {
+		temp := item.(map[string]interface{})
+		resultItem := CustomTokenReceiver{
+			PubKey: temp["PubKey"].(string),
+			Amount: temp["Amount"].(float64),
+		}
+		result = append(result, resultItem)
+	}
+	return result
 }
 
 // CreateEmptyCustomTokenTx - return an init custom token transaction
@@ -228,7 +247,7 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 	tx.Tx.AddressLastByte = lastByte
 	var latestAnchor map[byte][]byte
 
-	for len(inputNotes) > 0 || len(paymentInfo) > 0 {
+	if len(inputNotes) > 0 || len(paymentInfo) >= 0 {
 		// Sort input and output notes ascending by value to start building js descs
 		sort.Slice(inputNotes, func(i, j int) bool {
 			return inputNotes[i].note.Value < inputNotes[j].note.Value
@@ -325,7 +344,7 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 
 		// Choose output notes for the js desc
 		outputs := []*client.JSOutput{}
-		for len(paymentInfo) > 0 && len(outputs) < NumDescOutputs-1 && inputValue > 0 { // Leave out 1 output note for change
+		for len(paymentInfo) > 0 && len(outputs) < NumDescOutputs-1 && inputValue >= 0 { // Leave out 1 output note for change // TODO remove equal 0
 			p := paymentInfo[len(paymentInfo)-1]
 			var outNote *client.Note
 			var encKey []byte
@@ -348,14 +367,14 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 			outputs = append(outputs, output)
 		}
 
-		if inputValue > 0 {
+		if inputValue >= 0 { // TODO remove equal 0
 			// Still has some room left, check if one more output note is possible to add
 			var p *privacy.PaymentInfo
 			if len(paymentInfo) > 0 {
 				p = paymentInfo[len(paymentInfo)-1]
 			}
 
-			if p != nil && p.Amount == inputValue {
+			if p != nil && p.Amount == inputValue { // TODO remove equal 0
 				// Exactly equal, add this output note to js desc
 				outNote := &client.Note{Value: p.Amount, Apk: p.PaymentAddress.Pk}
 				var temp client.TransmissionKey
@@ -394,7 +413,7 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 
 		// Generate proof and sign tx
 		var reward uint64 // Zero reward for non-salary transaction
-		err = tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, assetType, false)
+		err = tx.BuildNewJSDesc(inputs, outputs, latestAnchor, reward, feeApply, assetType, true)
 		if err != nil {
 			return nil, err
 		}
@@ -407,6 +426,9 @@ func CreateTxCustomToken(senderKey *privacy.SpendingKey,
 
 		fmt.Printf("Len input and info: %+v %+v\n", len(inputNotes), len(paymentInfo))
 	}
+
+	// add token data params
+	// TODO
 
 	// Sign tx
 	tx, err = SignTxCustomToken(tx)

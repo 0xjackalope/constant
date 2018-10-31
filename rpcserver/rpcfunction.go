@@ -255,7 +255,7 @@ func (self RpcServer) handleRetrieveBlock(params interface{}, closeChan <-chan s
 			result.PreviousBlockHash = block.Header.PrevBlockHash.String()
 			result.NextBlockHash = nextHashString
 			result.TxHashes = []string{}
-			result.BlockProducerSign = block.ChainLeaderSig
+			result.BlockProducerSign = block.BlockProducerSig
 			for _, tx := range block.Transactions {
 				result.TxHashes = append(result.TxHashes, tx.Hash().String())
 			}
@@ -359,8 +359,8 @@ func (self RpcServer) handleGetBlockChainInfo(params interface{}, closeChan <-ch
 			TotalTxs:         bestState.TotalTxns,
 			SalaryFund:       bestState.BestBlock.Header.SalaryFund,
 			SalaryPerTx:      bestState.BestBlock.Header.GovernanceParams.SalaryPerTx,
-			BlockProducer:    bestState.BestBlock.ChainLeader,
-			BlockProducerSig: bestState.BestBlock.ChainLeaderSig,
+			BlockProducer:    bestState.BestBlock.BlockProducer,
+			BlockProducerSig: bestState.BestBlock.BlockProducerSig,
 		}
 	}
 	return result, nil
@@ -729,44 +729,25 @@ func (self RpcServer) handleCustomTokenTransaction(params interface{}, closeChan
 		return nil, NewRPCError(ErrUnexpected, err)
 	}
 
-	// param #2: list receiver
-	totalAmmount := int64(0)
-	receiversParam := arrayParams[1].(map[string]interface{})
-	paymentInfos := make([]*privacy.PaymentInfo, 0)
-	for pubKeyStr, amount := range receiversParam {
-		receiverPubKey, err := wallet.Base58CheckDeserialize(pubKeyStr)
-		if err != nil {
-			return nil, NewRPCError(ErrUnexpected, err)
-		}
-		paymentInfo := &privacy.PaymentInfo{
-			Amount:         uint64(amount.(float64)),
-			PaymentAddress: receiverPubKey.KeySet.PaymentAddress,
-		}
-		totalAmmount += int64(paymentInfo.Amount)
-		paymentInfos = append(paymentInfos, paymentInfo)
-	}
+	// param #2: estimation fee coin per kb
+	estimateFeeCoinPerKb := int64(arrayParams[1].(float64))
 
-	// param #3: estimation fee coin per kb
-	estimateFeeCoinPerKb := int64(arrayParams[2].(float64))
+	// param #3: estimation fee coin per kb by numblock
+	numBlock := uint32(arrayParams[2].(float64))
 
-	// param #4: estimation fee coin per kb by numblock
-	numBlock := uint32(arrayParams[3].(float64))
+	// param #4: token params
+	tokenParamsRaw := arrayParams[3].(map[string]interface{})
 
-	nodeAddr := arrayParams[4].(string)
-	if valid := common.ValidateNodeAddress(nodeAddr); !valid {
-		return nil, errors.New("node address is wrong")
-	}
-
-	// param #5: token params
-	tokenParamsRaw := arrayParams[5].(map[string]interface{})
 	tokenParams := &transaction.CustomTokenParamTx{
 		PropertyName:    tokenParamsRaw["TokenName"].(string),
 		PropertySymbol:  tokenParamsRaw["TokenSymbol"].(string),
 		TxCustomTokenID: tokenParamsRaw["TokenHash"].(string),
 		TokenTxType:     tokenParamsRaw["TokenTxType"].(float64),
 		Amount:          tokenParamsRaw["TokenAmount"].(float64),
-		// Receiver:        tokenParamsRaw["TokenReceiver"].(string), TO-DO
+		Receivers:       transaction.CreateCustomTokenReceiverArray(tokenParamsRaw["TokenReceivers"]),
 	}
+
+	totalAmmount := estimateFeeCoinPerKb
 
 	// list unspent tx for estimation fee
 	estimateTotalAmount := totalAmmount
@@ -797,7 +778,7 @@ func (self RpcServer) handleCustomTokenTransaction(params interface{}, closeChan
 		estimateFeeCoinPerKb = int64(temp)
 	}
 	estimateFeeCoinPerKb += int64(self.config.Wallet.Config.IncrementalFee)
-	estimateTxSizeInKb := transaction.EstimateTxSize(candidateTxs, paymentInfos)
+	estimateTxSizeInKb := transaction.EstimateTxSize(candidateTxs, nil)
 	realFee = uint64(estimateFeeCoinPerKb) * uint64(estimateTxSizeInKb)
 
 	// list unspent tx for create tx
@@ -831,7 +812,7 @@ func (self RpcServer) handleCustomTokenTransaction(params interface{}, closeChan
 		commitmentsDb[chainId] = txViewPoint.ListCommitments(common.AssetTypeCoin)
 	}
 
-	tx, err := transaction.CreateTxCustomToken(&senderKey.KeySet.PrivateKey, paymentInfos,
+	tx, err := transaction.CreateTxCustomToken(&senderKey.KeySet.PrivateKey, nil,
 		merkleRootCommitments,
 		candidateTxsMap,
 		nullifiersDb,
@@ -1195,7 +1176,7 @@ func (self RpcServer) handleGetAddressesByAccount(params interface{}, closeChan 
 /*
 getaccountaddress RPC returns the current coin address for receiving payments to this account. If the account doesn’t exist, it creates both the account and a new address for receiving payment. Once a payment has been received to an address, future calls to this RPC for the same account will return a different address.
 Parameter #1—an account name
-Result—a bitcoin address
+Result—a constant address
 */
 func (self RpcServer) handleGetAccountAddress(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	return self.config.Wallet.GetAccountAddress(params.(string)), nil
@@ -1516,8 +1497,8 @@ func (self RpcServer) handleRetrieveCommiteeCandidate(params interface{}, closeC
 func (self RpcServer) handleGetBlockProducerList(params interface{}, closeChan <-chan struct{}) (interface{}, error) {
 	result := make(map[string]string)
 	for chainID, bestState := range self.config.BlockChain.BestState {
-		if bestState.BestBlock.ChainLeader != "" {
-			result[strconv.Itoa(chainID)] = bestState.BestBlock.ChainLeader;
+		if bestState.BestBlock.BlockProducer != "" {
+			result[strconv.Itoa(chainID)] = bestState.BestBlock.BlockProducer;
 		} else {
 			result[strconv.Itoa(chainID)] = self.config.ChainParams.GenesisBlock.Header.Committee[chainID]
 		}

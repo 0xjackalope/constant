@@ -42,7 +42,7 @@ type Engine struct {
 
 	committee committeeStruct
 
-	Committee []string //Voted committee for the next block
+	//Committee []string //Voted committee for the next block
 }
 
 type committeeStruct struct {
@@ -88,12 +88,12 @@ type blockSig struct {
 }
 
 type swapSig struct {
-	LockTime        int64
-	RequesterPbk    string
-	ChainID         byte
-	SealerPublicKey string
-	Validator       string
-	ValidatorSig    string
+	LockTime     int64
+	RequesterPbk string
+	ChainID      byte
+	SealerPbk    string
+	Validator    string
+	ValidatorSig string
 }
 
 //Init apply configuration to consensus engine
@@ -175,7 +175,7 @@ func (self *Engine) Start() error {
 					self.validatedChainsHeight.Lock()
 					self.validatedChainsHeight.Heights[chainID] = blockHeight
 					self.validatedChainsHeight.Unlock()
-					self.committee.UpdateCommitteePoint(block.ChainLeader, block.Header.BlockCommitteeSigs)
+					self.committee.UpdateCommitteePoint(block.BlockProducer, block.Header.BlockCommitteeSigs)
 				}
 			}(chainID)
 		}
@@ -252,7 +252,7 @@ func (self *Engine) StartSealer(sealerKeySet cashec.KeySet) {
 				if self.started {
 					if common.IntArrayEquals(self.knownChainsHeight.Heights, self.validatedChainsHeight.Heights) {
 						chainID := self.getMyChain()
-						if chainID < common.TotalValidators {
+						if chainID >= 0 && chainID < common.TotalValidators {
 							Logger.log.Info("(๑•̀ㅂ•́)و Yay!! It's my turn")
 							Logger.log.Info("Current chainsHeight")
 							Logger.log.Info(self.validatedChainsHeight.Heights)
@@ -307,10 +307,10 @@ func (self *Engine) createBlock() (*blockchain.Block, error) {
 	newblock.Block.Header.ChainsHeight = make([]int, common.TotalValidators)
 	copy(newblock.Block.Header.ChainsHeight, self.validatedChainsHeight.Heights)
 	newblock.Block.Header.ChainID = myChainID
-	newblock.Block.ChainLeader = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
+	newblock.Block.BlockProducer = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
 
 	// hash candidate list and set to block header
-	candidates := self.GetCndList(newblock.Block)
+	candidates := self.GetCandidateCommitteeList(newblock.Block)
 	candidateBytes, _ := json.Marshal(candidates)
 	newblock.Block.Header.CandidateHash = common.HashH(candidateBytes)
 
@@ -390,7 +390,7 @@ finalizing:
 		reqSigMsg.(*wire.MessageRequestBlockSign).Block = block
 		for idx := 0; idx < common.TotalValidators; idx++ {
 			//@TODO: retry on failed validators
-			if committee[idx] != finalBlock.ChainLeader {
+			if committee[idx] != finalBlock.BlockProducer {
 				go func(validator string) {
 					peerIDs := self.config.Server.GetPeerIDsFromPublicKey(validator)
 					if len(peerIDs) != 0 {
@@ -428,7 +428,7 @@ finalizing:
 	if err != nil {
 		return err
 	}
-	finalBlock.ChainLeaderSig = sig
+	finalBlock.BlockProducerSig = sig
 
 	self.UpdateChain(finalBlock)
 	self.sendBlockMsg(finalBlock)
@@ -454,7 +454,7 @@ func (self *Engine) UpdateChain(block *blockchain.Block) {
 	}
 
 	// update candidate list
-	self.config.BlockChain.BestState[block.Header.ChainID].Candidates = self.GetCndList(block)
+	self.config.BlockChain.BestState[block.Header.ChainID].Candidates = self.GetCandidateCommitteeList(block)
 	self.config.BlockChain.BestState[block.Header.ChainID].Update(block)
 	self.config.BlockChain.StoreBestState(block.Header.ChainID)
 
@@ -468,10 +468,10 @@ func (self *Engine) UpdateChain(block *blockchain.Block) {
 	self.validatedChainsHeight.Heights[block.Header.ChainID] = int(block.Height)
 	self.validatedChainsHeight.Unlock()
 
-	self.committee.UpdateCommitteePoint(block.ChainLeader, block.Header.BlockCommitteeSigs)
+	self.committee.UpdateCommitteePoint(block.BlockProducer, block.Header.BlockCommitteeSigs)
 }
 
-func (self *Engine) GetCndList(block *blockchain.Block) map[string]blockchain.CommitteeCandidateInfo {
+func (self *Engine) GetCandidateCommitteeList(block *blockchain.Block) map[string]blockchain.CommitteeCandidateInfo {
 	bestState := self.config.BlockChain.BestState[block.Header.ChainID]
 	candidates := bestState.Candidates
 	if candidates == nil {
@@ -513,7 +513,7 @@ func (self *Engine) StartSwap() error {
 			select {
 			case <-time.After(10 * time.Second):
 				Logger.log.Info("Consensus engine SWAP TIMER")
-				self.cSwapChain <- byte(1)
+				self.cSwapChain <- byte(10)
 				continue
 			}
 		}
@@ -532,10 +532,15 @@ func (self *Engine) StartSwap() error {
 
 				allSigReceived := make(chan struct{})
 				retryTime := 0
-				committee := make([]string, common.TotalValidators)
-				copy(committee, self.GetCommittee())
+
+				committee := self.GetCommittee()
 
 				requesterPbk := base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
+
+				if common.IndexOfStr(requesterPbk, committee) < 0 {
+					continue
+				}
+
 				committeeCandidateList := self.config.BlockChain.GetCommitteeCandidateList()
 				sealerPbk := ""
 				for _, committeeCandidatePbk := range committeeCandidateList {
@@ -546,15 +551,23 @@ func (self *Engine) StartSwap() error {
 					sealerPbk = committeeCandidatePbk
 				}
 				if sealerPbk == "" {
+					//TODO for testing
+					sealerPbk = "1q4iCdtqb67DcNYyCE8FvMZKrDRE8KHW783VoYm5LXvds7vpsi"
+				}
+				if sealerPbk == "" {
 					continue
 				}
+
+				if common.IndexOfStr(sealerPbk, committee) >= 0 {
+					continue
+				}
+
 				signatureMap := make(map[string]string)
-
+				lockTime := time.Now().Unix()
 			BeginSwap:
-
 			// Collect signatures of other validators
 				cancel := make(chan struct{})
-				go func(requesterPbk string, chainId byte, sealerPbk string) {
+				go func(lockTime int64, requesterPbk string, chainId byte, sealerPbk string) {
 					for {
 						select {
 						case <-cancel:
@@ -563,17 +576,14 @@ func (self *Engine) StartSwap() error {
 							_ = swapSig
 							if common.IndexOfStr(swapSig.Validator, committee) >= 0 && swapSig.RequesterPbk == requesterPbk {
 								// verify signature
-								rawBytes := []byte{}
-								rawBytes = append(rawBytes, []byte(requesterPbk)...)
-								rawBytes = append(rawBytes, chainId)
-								rawBytes = append(rawBytes, []byte(sealerPbk)...)
+								rawBytes := self.getRawBytesForSwap(lockTime, requesterPbk, chainId, sealerPbk)
 								err := cashec.ValidateDataB58(swapSig.Validator, swapSig.ValidatorSig, rawBytes)
 								if err != nil {
 									continue
 								}
 								Logger.log.Info("SWAP validate signature ok from ", swapSig.Validator, sealerPbk)
 								signatureMap[swapSig.Validator] = swapSig.ValidatorSig
-								if len(signatureMap) >= common.TotalValidators/2 {
+								if len(signatureMap) >= 1 {
 									close(allSigReceived)
 									return
 								}
@@ -582,9 +592,8 @@ func (self *Engine) StartSwap() error {
 							return
 						}
 					}
-				}(requesterPbk, chainId, sealerPbk)
+				}(lockTime, requesterPbk, chainId, sealerPbk)
 
-				lockTime := time.Now().Unix()
 				// Request signatures from other validators
 				go func(requesterPbk string, chainId byte, sealerPbk string) {
 					reqSigMsg, _ := wire.MakeEmptyMessage(wire.CmdRequestSwap)
@@ -592,6 +601,14 @@ func (self *Engine) StartSwap() error {
 					reqSigMsg.(*wire.MessageRequestSwap).RequesterPbk = requesterPbk
 					reqSigMsg.(*wire.MessageRequestSwap).ChainID = chainId
 					reqSigMsg.(*wire.MessageRequestSwap).SealerPbk = sealerPbk
+
+					rawBytes := self.getRawBytesForSwap(lockTime, requesterPbk, chainId, sealerPbk)
+					sigStr, err := self.signData(rawBytes)
+					if err != nil {
+						Logger.log.Infof("Request swap sign error", err)
+						return
+					}
+					reqSigMsg.(*wire.MessageRequestSwap).RequesterSig = sigStr
 
 					for idx := 0; idx < common.TotalValidators; idx++ {
 						if committee[idx] != requesterPbk {
@@ -641,6 +658,8 @@ func (self *Engine) StartSwap() error {
 					reqSigMsg.(*wire.MessageUpdateSwap).ChainID = chainId
 					reqSigMsg.(*wire.MessageUpdateSwap).SealerPbk = sealerPbk
 					reqSigMsg.(*wire.MessageUpdateSwap).Signatures = signatureMap
+
+					self.config.Server.PushMessageToAll(reqSigMsg)
 				} else {
 					Logger.log.Errorf("Update committee is error", err)
 				}
@@ -650,27 +669,5 @@ func (self *Engine) StartSwap() error {
 			}
 		}
 	}
-	return nil
-}
-
-func (self *Engine) updateCommittee(sealerPbk string, chanId byte) error {
-	self.committeeMutex.Lock()
-	defer self.committeeMutex.Unlock()
-
-	committee := make([]string, common.TotalValidators)
-	copy(committee, self.GetCommittee())
-
-	idx := common.IndexOfStr(sealerPbk, committee)
-	if idx >= 0 {
-		return errors.New("committee is swapped")
-	}
-	self.Committee = append(committee[:chanId], sealerPbk)
-	self.Committee = append(self.Committee, committee[chanId+1:]...)
-	//remove sealerPbk from candidate list
-	for chainId, bestState := range self.config.BlockChain.BestState {
-		bestState.RemoveCandidate(sealerPbk)
-		self.config.BlockChain.StoreBestState(byte(chainId))
-	}
-
 	return nil
 }

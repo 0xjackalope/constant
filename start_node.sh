@@ -27,8 +27,8 @@ KEY19="112t8rncGVPyXz95MR8R6HgRMX3ti34dJWEXpdT8xnnvYY95kL1LdNGNjVekdpNrmrLygwwJ7
 KEY20="112t8rncXRmHSvMEVnPuBh9R8ekexYwa97TvbW5mpq4wubkNVfWqeJtjWx9riKDDcgGMdPmBGhehYLxKbX5rCDWds9AQ7yLdjXrnh912wPqQ"
 
 rm -rf ./data/node-$1/mainnet/block
-rm -rf ./data/node-$1/mainnet/wallet
-rm -rf ./data/node-$1/mainnet/peer.json
+#rm -rf ./data/node-$1/mainnet/wallet
+#rm -rf ./data/node-$1/mainnet/peer.json
 
 mkdir -p ./data/node-$1
 rm -rf ./cash-$1

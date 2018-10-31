@@ -11,10 +11,10 @@ const (
 
 type MessageRequestSwap struct {
 	LockTime     int64
-	SenderID     string
 	RequesterPbk string
 	ChainID      byte
 	SealerPbk    string
+	RequesterSig string
 }
 
 func (self MessageRequestSwap) MessageType() string {
@@ -36,6 +36,5 @@ func (self MessageRequestSwap) JsonDeserialize(jsonStr string) error {
 }
 
 func (self *MessageRequestSwap) SetSenderID(senderID peer.ID) error {
-	self.SenderID = senderID.Pretty()
 	return nil
 }

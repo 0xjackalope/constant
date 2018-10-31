@@ -126,7 +126,7 @@ func (self *Engine) IsEnoughData(block *blockchain.Block) error {
 					} else {
 						Logger.log.Error("Validator's peer not found!", chainLeader)
 					}
-				}(block.ChainLeader)
+				}(block.BlockProducer)
 			}
 		}
 		if notFullySync {
@@ -159,7 +159,7 @@ func (self *Engine) validateBlockSanity(block *blockchain.Block) error {
 
 	// 3. Check signature of the block leader for block header
 	headerBytes, _ := json.Marshal(block.Header)
-	err = cashec.ValidateDataB58(block.ChainLeader, block.ChainLeaderSig, headerBytes)
+	err = cashec.ValidateDataB58(block.BlockProducer, block.BlockProducerSig, headerBytes)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (self *Engine) validateBlockSanity(block *blockchain.Block) error {
 	}
 
 	// 6. validate candidate list hash
-	candidates := self.GetCndList(block)
+	candidates := self.GetCandidateCommitteeList(block)
 	candidateBytes, err := json.Marshal(candidates)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func (self *Engine) validatePreSignBlockSanity(block *blockchain.Block) error {
 	}
 
 	// 3. Check signature of the block leader for block hash
-	err = cashec.ValidateDataB58(block.ChainLeader, block.Header.BlockCommitteeSigs[block.Header.ChainID], []byte(block.Hash().String()))
+	err = cashec.ValidateDataB58(block.BlockProducer, block.Header.BlockCommitteeSigs[block.Header.ChainID], []byte(block.Hash().String()))
 	if err != nil {
 		return err
 	}
