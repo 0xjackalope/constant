@@ -185,7 +185,7 @@ func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 	messageSigMsg.(*wire.MessageSignSwap).RequesterPbk = msg.RequesterPbk
 	messageSigMsg.(*wire.MessageSignSwap).ChainID = msg.ChainID
 	messageSigMsg.(*wire.MessageSignSwap).SealerPbk = msg.SealerPbk
-	messageSigMsg.(*wire.MessageSignSwap).Validator = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.SpublicKey, byte(0x00))
+	messageSigMsg.(*wire.MessageSignSwap).Validator = base58.Base58Check{}.Encode(self.config.ValidatorKeySet.PaymentAddress.Pk, byte(0x00))
 	messageSigMsg.(*wire.MessageSignSwap).ValidatorSig = sig
 
 	peerIDs = self.config.Server.GetPeerIDsFromPublicKey(msg.RequesterPbk)
