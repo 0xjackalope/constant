@@ -7,6 +7,13 @@ import (
 	"github.com/minio/blake2b-simd"
 )
 
+const (
+	PK    = 0
+	VALUE = 1
+	SN    = 2
+	RAND  = 3
+)
+
 // PedersenCommitment represents a commitment that includes 4 generators
 type PedersenCommitment interface {
 	// Params returns the parameters for the commitment
@@ -163,11 +170,7 @@ func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	return res
 }
 
-<<<<<<< HEAD
-//CommitSpecValue allow commit a value with special index in list G params
-=======
 // CommitSpecValue commits specific value with index and returns 34 bytes
->>>>>>> 4441f65b5d6aee017dc33dda934bd9422c286c33
 func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
