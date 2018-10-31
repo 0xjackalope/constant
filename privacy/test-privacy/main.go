@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/ninjadotorg/cash/privacy"
-)
+import "github.com/ninjadotorg/cash/privacy"
 
 func main() {
 
@@ -55,8 +53,11 @@ func main() {
 	//tx, _ := transaction.CreateEmptyTxs()
 	//fmt.Printf("Transaction: %+v\n", tx)
 
-	//privacy.Pcm.InitCommitment()
-	// privacy.TestProofIsZero()
-	// fmt.Println("Done")
-	privacy.TestPKComZeroOne()
+	privacy.Pcm.InitCommitment()
+	//privacy.TestProofIsZero()
+	//// fmt.Println("Done")
+	//a:= new(privacy.InputCommitments)
+	//
+	//privacy.TestPKComZeroOne()
+	privacy.TestProductCommitment()
 }

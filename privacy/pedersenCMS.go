@@ -183,3 +183,20 @@ func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	res = append(res, CompressKey(commitment)...)
 	return res
 }
+func (com PCParams) CommitWithSpecPoint(G EllipticPoint, H EllipticPoint, value, sRnd []byte) []byte {
+	var commitment, temp EllipticPoint
+	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	temp = EllipticPoint{big.NewInt(0), big.NewInt(0)}
+	temp.X, temp.Y = Curve.ScalarMult(G.X, G.Y, value)
+	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
+	temp.X, temp.Y = Curve.ScalarMult(H.X, H.Y, sRnd)
+	commitment.X, commitment.Y = Curve.Add(commitment.X, commitment.Y, temp.X, temp.Y)
+	//fmt.Println("cmt Point:", commitment)
+	//append type commitment into the first byte
+	var res []byte
+	var idx byte
+	idx = 0
+	res = append(res, idx)
+	res = append(res, CompressKey(commitment)...)
+	return res
+}
