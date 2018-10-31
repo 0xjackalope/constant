@@ -2,6 +2,7 @@ package rewardagent
 
 import (
 	"sync"
+
 	"github.com/ninjadotorg/cash/blockchain"
 )
 
@@ -28,8 +29,11 @@ func (self RewardAgent) Init(cfg *RewardAgentConfig) (*RewardAgent, error) {
 }
 
 func (self *RewardAgent) GetBasicSalary(chainId byte) uint64 {
-	// TODO: get param from prev-blocks to define a salary reward which gov need to pay for miner
 	return self.config.BlockChain.BestState[chainId].BestBlock.Header.GovernanceParams.BasicSalary
+}
+
+func (self *RewardAgent) GetSalaryPerTx(chainId byte) uint64 {
+	return self.config.BlockChain.BestState[chainId].BestBlock.Header.GovernanceParams.SalaryPerTx
 }
 
 // func getMedians(agentDataPoints []*blockchain.AgentDataPoint) (

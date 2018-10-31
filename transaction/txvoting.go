@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"sort"
 	"strconv"
+
 	"github.com/ninjadotorg/cash/cashec"
 	"github.com/ninjadotorg/cash/common"
 	"github.com/ninjadotorg/cash/privacy"
@@ -113,6 +114,10 @@ func (tx *TxVoting) GetTxVirtualSize() uint64 {
 
 func (tx *TxVoting) GetSenderAddrLastByte() byte {
 	return tx.Tx.AddressLastByte
+}
+
+func (tx *TxVoting) GetTxFee() uint64 {
+	return tx.Fee
 }
 
 // CreateVotingTx creates transaction with appropriate proof for a private payment
