@@ -1,6 +1,7 @@
 package privacy
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/minio/blake2b-simd"
@@ -16,6 +17,7 @@ type PedersenCommitment interface {
 	Commit([CM_CAPACITY][]byte) []byte
 	getHashOfValues([]byte) []byte
 	CommitSpecValue([]byte, []byte, byte) []byte
+	TestFunction(byte) bool
 }
 
 // PCParams represents the parameters for the commitment
@@ -63,6 +65,7 @@ func hashGenerator(g EllipticPoint) EllipticPoint {
 }
 
 //GetHashOfValues get hash of n points in G append with input values
+//return blake_2b(G[0]||G[1]||...||G[CM_CAPACITY-1]||<values>)
 func (com PCParams) getHashOfValues(values [][]byte) []byte {
 	appendStr := CompressKey(Pcm.G[0])
 	for i := 1; i < CM_CAPACITY; i++ {
@@ -160,7 +163,11 @@ func (com PCParams) Commit(values [CM_CAPACITY][]byte) []byte {
 	return res
 }
 
+<<<<<<< HEAD
+//CommitSpecValue allow commit a value with special index in list G params
+=======
 // CommitSpecValue commits specific value with index and returns 34 bytes
+>>>>>>> 4441f65b5d6aee017dc33dda934bd9422c286c33
 func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	var commitment, temp EllipticPoint
 	commitment = EllipticPoint{big.NewInt(0), big.NewInt(0)}
@@ -175,4 +182,41 @@ func (com PCParams) CommitSpecValue(value, sRnd []byte, index byte) []byte {
 	res = append(res, index)
 	res = append(res, CompressKey(commitment)...)
 	return res
+}
+
+//testFunction allow we test each of function for PedersenCommitment
+//00: Test generate commitment for four random value and show that on console
+//01: Test generate commitment for special value and its random value in special index
+func (com PCParams) TestFunction(testCode byte) bool {
+	switch testCode {
+	case 0: //Generate commitment for 4 random value
+		//Generate 4 random value
+		value1 := RandBytes(32)
+		value2 := RandBytes(32)
+		value3 := RandBytes(32)
+		valuer := RandBytes(32)
+		fmt.Println("Value 1: ", value1)
+		fmt.Println("Value 2: ", value2)
+		fmt.Println("Value 3: ", value3)
+		fmt.Println("Value r: ", valuer)
+
+		//Compute commitment for all value, 4 is value of constant CM_CAPACITY
+		commitmentAll := Pcm.Commit([4][]byte{value1, value2, value3, valuer})
+
+		fmt.Println("Commitment value: ", commitmentAll)
+		break
+	case 1: //Generate commitment for special value and its random value
+		//Generate 2 random value
+		value1 := RandBytes(32)
+		valuer := RandBytes(32)
+		fmt.Println("Value 1: ", value1)
+		fmt.Println("Value r: ", valuer)
+
+		//Compute commitment for special value with index 0
+		commitmentSpec := Pcm.CommitSpecValue(value1, valuer, 0)
+
+		fmt.Println("Commitment value: ", commitmentSpec)
+		break
+	}
+	return true
 }

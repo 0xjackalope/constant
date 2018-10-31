@@ -68,11 +68,7 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 		commitmentValue,
 		CompressKey((*alpha)),
 	}
-	//appendStr := append(CompressKey(Pcm.G[0]), CompressKey(Pcm.G[1])...)
-	//appendStr = append(appendStr, CompressKey(Pcm.G[2])...)
-	//appendStr = append(appendStr, CompressKey(Pcm.G[3])...)
-	//appendStr = append(appendStr, commitmentValue...)
-	//appendStr = append(appendStr, CompressKey(*alpha)...)
+
 	appendStr := Pcm.getHashOfValues(values)
 	hashFunc.Write(appendStr)
 	beta := hashFunc.Sum(nil)
@@ -95,7 +91,8 @@ func (pro *PKComValProtocol) Prove(commitmentValue []byte) (*PKComValProof, erro
 	return proof, nil
 }
 
-// Verify check the proof's value
+//Verify check the proof's value
+//in this function, we check c
 func (pro *PKComValProtocol) Verify(proof PKComValProof, commitmentValue []byte) bool {
 	// re-calculate beta and check whether it is equal to beta of proof or not
 	beta := Pcm.getHashOfValues([][]byte{commitmentValue, proof.Alpha})
