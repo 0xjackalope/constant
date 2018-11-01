@@ -120,7 +120,7 @@ func (self *Engine) OnGetChainState(msg *wire.MessageGetChainState) {
 	}
 	newMsg.(*wire.MessageChainState).ChainInfo = ChainInfo{
 		CurrentCommittee:        self.GetCommittee(),
-		CandidateListMerkleHash: "",
+		CandidateListMerkleHash: common.EmptyString,
 		ChainsHeight:            self.validatedChainsHeight.Heights,
 	}
 	peerID, _ := peer2.IDB58Decode(msg.SenderID)
@@ -167,6 +167,8 @@ func (self *Engine) OnRequestSwap(msg *wire.MessageRequestSwap) {
 		Logger.log.Info("Received a MessageRequestSwap validate error", err)
 		return
 	}
+	// validate condition for swap
+
 	peerIDs := self.config.Server.GetPeerIDsFromPublicKey(msg.SealerPbk)
 	if len(peerIDs) == 0 {
 		return
@@ -243,7 +245,7 @@ func (self *Engine) OnUpdateSwap(msg *wire.MessageUpdateSwap) {
 		}
 		cLeader += 1
 	}
-	if cLeader < 1 {
+	if cLeader < common.TotalValidators / 2 {
 		Logger.log.Error("ERROR OnUpdateSwap not enough signatures")
 		return
 	}
