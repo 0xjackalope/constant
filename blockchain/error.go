@@ -6,7 +6,7 @@ package blockchain
 
 import (
 	"fmt"
-	"github.com/ninjadotorg/cash/common"
+	"github.com/ninjadotorg/constant/common"
 )
 
 // DeploymentError identifies an error that indicates a deployment Id was

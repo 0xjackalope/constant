@@ -1,6 +1,6 @@
 package main
 
-import "github.com/ninjadotorg/cash/privacy"
+import "github.com/ninjadotorg/constant/privacy"
 
 func main() {
 

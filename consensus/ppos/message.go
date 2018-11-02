@@ -2,11 +2,11 @@ package ppos
 
 import (
 	peer2 "github.com/libp2p/go-libp2p-peer"
-	"github.com/ninjadotorg/cash/blockchain"
-	"github.com/ninjadotorg/cash/common/base58"
-	"github.com/ninjadotorg/cash/wire"
-	"github.com/ninjadotorg/cash/cashec"
-	"github.com/ninjadotorg/cash/common"
+	"github.com/ninjadotorg/constant/blockchain"
+	"github.com/ninjadotorg/constant/common/base58"
+	"github.com/ninjadotorg/constant/wire"
+	"github.com/ninjadotorg/constant/cashec"
+	"github.com/ninjadotorg/constant/common"
 	"time"
 )
 

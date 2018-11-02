@@ -3,8 +3,8 @@ package blockchain
 import (
 	"math"
 
-	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/transaction"
+	"github.com/ninjadotorg/constant/common"
+	"github.com/ninjadotorg/constant/transaction"
 )
 
 type Merkle struct {

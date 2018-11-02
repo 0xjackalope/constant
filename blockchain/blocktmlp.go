@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/privacy/client"
-	"github.com/ninjadotorg/cash/transaction"
-	"github.com/ninjadotorg/cash/privacy"
+	"github.com/ninjadotorg/constant/common"
+	"github.com/ninjadotorg/constant/privacy/client"
+	"github.com/ninjadotorg/constant/transaction"
+	"github.com/ninjadotorg/constant/privacy"
 )
 
 func (blockgen *BlkTmplGenerator) NewBlockTemplate(payToAddress privacy.PaymentAddress, chainID byte) (*BlockTemplate, error) {

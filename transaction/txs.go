@@ -12,8 +12,8 @@ import (
 
 	"math"
 
-	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/privacy"
+	"github.com/ninjadotorg/constant/common"
+	"github.com/ninjadotorg/constant/privacy"
 )
 
 // Txs represents a coin-transfer-transaction stored in a block

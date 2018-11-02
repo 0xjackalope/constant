@@ -3,10 +3,10 @@ package main
 import (
 	"path/filepath"
 	"os"
-	"github.com/ninjadotorg/cash/wallet"
+	"github.com/ninjadotorg/constant/wallet"
 	"log"
 	"errors"
-	"github.com/ninjadotorg/cash/common/base58"
+	"github.com/ninjadotorg/constant/common/base58"
 )
 
 func loadWallet() (*wallet.Wallet, error) {

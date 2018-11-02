@@ -10,16 +10,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ninjadotorg/cash/blockchain"
-	"github.com/ninjadotorg/cash/cashec"
-	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/rpcserver/jsonresult"
-	"github.com/ninjadotorg/cash/transaction"
-	"github.com/ninjadotorg/cash/wallet"
-	"github.com/ninjadotorg/cash/wire"
+	"github.com/ninjadotorg/constant/blockchain"
+	"github.com/ninjadotorg/constant/cashec"
+	"github.com/ninjadotorg/constant/common"
+	"github.com/ninjadotorg/constant/rpcserver/jsonresult"
+	"github.com/ninjadotorg/constant/transaction"
+	"github.com/ninjadotorg/constant/wallet"
+	"github.com/ninjadotorg/constant/wire"
 	"golang.org/x/crypto/ed25519"
-	"github.com/ninjadotorg/cash/privacy"
-	"github.com/ninjadotorg/cash/common/base58"
+	"github.com/ninjadotorg/constant/privacy"
+	"github.com/ninjadotorg/constant/common/base58"
 )
 
 type commandHandler func(RpcServer, interface{}, <-chan struct{}) (interface{}, error)

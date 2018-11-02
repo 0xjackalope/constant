@@ -18,9 +18,9 @@ import (
 	"github.com/libp2p/go-libp2p-net"
 	"github.com/libp2p/go-libp2p-peer"
 	ma "github.com/multiformats/go-multiaddr"
-	"github.com/ninjadotorg/cash/common"
-	"github.com/ninjadotorg/cash/wire"
-	"github.com/ninjadotorg/cash/cashec"
+	"github.com/ninjadotorg/constant/common"
+	"github.com/ninjadotorg/constant/wire"
+	"github.com/ninjadotorg/constant/cashec"
 )
 
 // ConnState represents the state of the requested connection.
