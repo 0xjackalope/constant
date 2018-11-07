@@ -3,6 +3,7 @@ package privacy
 import (
 	"fmt"
 	"math/big"
+	"strconv"
 )
 
 //inversePoint return inverse point of ECC Point input
@@ -42,4 +43,16 @@ func IsPowerOfTwo(n int) bool {
 
 func ConvertAsciiToInt(c uint8) byte {
 	return byte(c - 48)
+}
+
+// ConvertIntToBinany represents a integer number in binary
+func ConvertIntToBinany(i int) []byte{
+
+	binary := make([]byte, 32)
+	str := strconv.FormatInt(int64(i), 2)
+	for j := 0; j < len(str); j++ {
+		binary[j] = ConvertAsciiToInt(str[j])
+	}
+	return binary
+	//fmt.Printf("inddex in binary: %v\n", binary)
 }

@@ -3,7 +3,6 @@ package privacy
 import (
 	"fmt"
 	"math/big"
-	"strconv"
 )
 
 // PKOneOfManyProtocol is a protocol for Zero-knowledge Proof of Knowledge of one out of many commitments containing 0
@@ -28,7 +27,7 @@ func (pro *PKOneOfManyProtocol) SetWitness(witnesses [][]byte) {
 }
 
 // Prove creates proof for one out of many commitments containing 0
-func (pro *PKOneOfManyProtocol) Prove(commitments [][]byte, indexIsZero int, commitmentValue []byte, index byte) (*PKOneOfManyProof, error) {
+func (pro *PKOneOfManyProtocol) Prove(commitments [][]byte, indexIsZero int, rand []byte, commitmentValue []byte, index byte) (*PKOneOfManyProof, error) {
 	n := len(commitments)
 	// Check the number of commitment list's elements
 	if !IsPowerOfTwo(n) {
@@ -46,59 +45,125 @@ func (pro *PKOneOfManyProtocol) Prove(commitments [][]byte, indexIsZero int, com
 	}
 
 	// represent indexIsZero in binary
-	indexIsZeroBinary := make([]byte, 32)
-	str := strconv.FormatInt(int64(indexIsZero), 2)
-	for i := 0; i < len(str); i++ {
-		indexIsZeroBinary[i] = ConvertAsciiToInt(str[i])
-	}
-	fmt.Printf("inddex in binary: %v\n", indexIsZeroBinary)
+	indexIsZeroBinary := ConvertIntToBinany(indexIsZero)
 
 	//
 	r := make([][]byte, n+1)
 	a := make([][]byte, n+1)
 	s := make([][]byte, n+1)
 	t := make([][]byte, n+1)
-	u := make([][]byte, n+1)
+	u := make([][]byte, n)
 
-	cl := make([][]byte, n)
-	ca := make([][]byte, n)
-	cb := make([][]byte, n)
-	// cd := make([][]byte, n)
+	cl := make([][]byte, n+1)
+	ca := make([][]byte, n+1)
+	cb := make([][]byte, n+1)
+	cd := make([][]byte, n)
 
-	for i := 1; i <= n; i++ {
+	for j := 1; j <= n; j++ {
 		// Generate random numbers
-		r[i] = make([]byte, 32)
-		r[i] = RandBytes(32)
-		a[i] = make([]byte, 32)
-		a[i] = RandBytes(32)
-		s[i] = make([]byte, 32)
-		s[i] = RandBytes(32)
-		t[i] = make([]byte, 32)
-		t[i] = RandBytes(32)
-		u[i-1] = make([]byte, 32)
-		u[i-1] = RandBytes(32)
+		r[j] = make([]byte, 32)
+		r[j] = RandBytes(32)
+		a[j] = make([]byte, 32)
+		a[j] = RandBytes(32)
+		s[j] = make([]byte, 32)
+		s[j] = RandBytes(32)
+		t[j] = make([]byte, 32)
+		t[j] = RandBytes(32)
+		u[j-1] = make([]byte, 32)
+		u[j-1] = RandBytes(32)
 
-		// convert indexIsZeroBinary[i] to big.Int
-		indexInt := big.NewInt(int64(indexIsZeroBinary[i]))
+		// convert indexIsZeroBinary[j] to big.Int
+		indexInt := big.NewInt(int64(indexIsZeroBinary[j-1]))
 
 		// Calculate cl, ca, cb, cd
 		// cl = Com(l, r)
-		cl[i] = make([]byte, 34)
-		cl[i] = Pcm.CommitSpecValue(indexInt.Bytes(), r[i], index)
+		cl[j] = make([]byte, 34)
+		cl[j] = Pcm.CommitSpecValue(indexInt.Bytes(), r[j], index)
 
 		// ca = Com(a, s)
-		ca[i] = make([]byte, 34)
-		ca[i] = Pcm.CommitSpecValue(a[i], s[i], index)
+		ca[j] = make([]byte, 34)
+		ca[j] = Pcm.CommitSpecValue(a[j], s[j], index)
 
 		// cb = Com(la, t)
 		la := new(big.Int)
-		la.Mul(indexInt, new(big.Int).SetBytes(a[i]))
-		cb[i] = make([]byte, 34)
-		cb[i] = Pcm.CommitSpecValue(la.Bytes(), t[i], index)
-
-		// cd =
+		la.Mul(indexInt, new(big.Int).SetBytes(a[j]))
+		cb[j] = make([]byte, 34)
+		cb[j] = Pcm.CommitSpecValue(la.Bytes(), t[j], index)
 
 	}
+
+	// cd_k =
+	// Calculate: ci^pi,k
+	for k:=0; k< n; k++{
+		// Calculate pi,k which is coefficient of x^k in polynomial pi(x)
+		res := big.NewInt(1)
+		tmp := big.NewInt(0)
+		for i:=0; i<n; i++{
+			// represent i in binary
+			iBinary := ConvertIntToBinany(i)
+			pik := GetCoefficient(iBinary, k, n, a, indexIsZeroBinary)
+			//pik := make([]byte, 32)
+			tmp.Exp(new(big.Int).SetBytes(commitments[i]), pik, big.NewInt(0))
+			res.Mul(res, tmp)
+		}
+		comZero := Pcm.CommitSpecValue(big.NewInt(0).Bytes(), u[k], index)
+		res.Mul(res, new(big.Int).SetBytes(comZero))
+		cd[k] = make([]byte, 32)
+		copy(cd[k], res.Bytes())
+	}
+
+
+	// Calculate x
+	x := big.NewInt(0)
+	for j:=1; j<n; j++{
+		x.SetBytes(Pcm.getHashOfValues([][]byte{x.Bytes(), cl[j], ca[j], cb[j], cd[j-1]}))
+	}
+	//x.Mod(x, Curve.Params().N)
+
+	// Calculate za, zb zd
+	//res := Poly{big.NewInt(1)}
+	//var fji Poly
+	f := make([][]byte, n+1)
+	za := make([][]byte, n+1)
+	zb := make([][]byte, n+1)
+	zd := make([]byte, 32)
+
+	for j:=1; j<=n; j++{
+		// f = lx + a
+		fInt:=  big.NewInt(0)
+		fInt.Mul(big.NewInt(int64(indexIsZeroBinary[j])), x)
+		fInt.Add(fInt, new(big.Int).SetBytes(a[j]))
+		f[j] = fInt.Bytes()
+
+		// za = s + rx
+		zaInt := big.NewInt(0)
+		zaInt.Mul(new(big.Int).SetBytes(r[j]), x)
+		zaInt.Add(zaInt, new(big.Int).SetBytes(s[j]))
+		za[j] = zaInt.Bytes()
+
+		// zb = r(x - f) + t
+		zbInt := big.NewInt(0)
+		zbInt.Sub(x, fInt)
+		zbInt.Mul(zbInt, new(big.Int).SetBytes(r[j]))
+		zbInt.Add(zbInt, new(big.Int).SetBytes(t[j]))
+		zb[j] = zbInt.Bytes()
+
+	}
+
+	zdInt := big.NewInt(0)
+	zdInt.Exp(x, big.NewInt(int64(n)), nil )
+	zdInt.Mul(zdInt, new(big.Int).SetBytes(rand))
+
+	uxInt := big.NewInt(0)
+	sumInt := big.NewInt(0)
+	for k:=0; k<n; k++{
+		uxInt.Exp(x, big.NewInt(int64(k)), nil )
+		uxInt.Mul(uxInt, new(big.Int).SetBytes(u[k]))
+		sumInt.Add(sumInt, uxInt)
+	}
+
+	zdInt.Sub(zdInt, sumInt)
+	copy(zd, zdInt.Bytes())
 
 	return nil, nil
 }
@@ -126,10 +191,27 @@ func TestPKOneOfMany() {
 
 	serialNumbers[indexIsZero] = big.NewInt(0).Bytes()
 	commitments[indexIsZero] = Pcm.CommitSpecValue(serialNumbers[indexIsZero], randoms[indexIsZero], SN_CM)
-	res, err := pk.Prove(commitments, indexIsZero, commitments[indexIsZero], SN_CM)
+	res, err := pk.Prove(commitments, indexIsZero, commitments[indexIsZero], randoms[indexIsZero], SN_CM)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Println(res)
+}
+
+// Get coefficient of x^k in polynomial pi(x)
+func GetCoefficient(iBinary []byte , k int, n int, a [][]byte, l []byte ) *big.Int{
+	res := Poly{big.NewInt(1)}
+	var fji Poly
+	for j:=1; j<=n; j++{
+		fj := Poly{new(big.Int).SetBytes(a[j]), big.NewInt(int64(l[j-1])) }
+		if iBinary[j-1] == 0 {
+			fji = Poly{big.NewInt(0), big.NewInt(1)}.Sub(fj, nil)
+
+		} else{
+			fji = fj
+		}
+		res = res.Mul(fji, nil)
+	}
+	return res[k+1]
 }

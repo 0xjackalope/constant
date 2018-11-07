@@ -16,7 +16,7 @@ type EllipticPointHelper interface {
 	IsSafe() bool
 }
 
-// EllipticPoint represents an point of ellipctic
+// EllipticPoint represents an point of elliptic curve
 type EllipticPoint struct {
 	X, Y *big.Int
 }

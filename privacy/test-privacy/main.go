@@ -1,6 +1,8 @@
 package main
 
-import "github.com/ninjadotorg/constant/privacy"
+import (
+	"github.com/ninjadotorg/constant/privacy"
+)
 
 func main() {
 
@@ -53,19 +55,43 @@ func main() {
 	//tx, _ := transaction.CreateEmptyTxs()
 	//fmt.Printf("Transaction: %+v\n", tx)
 
-	privacy.Pcm.InitCommitment()
+	//privacy.Pcm.InitCommitment()
 	//privacy.TestProofIsZero()
 	//// fmt.Println("Done")
 	//a:= new(privacy.InputCommitments)
 	//
 	//privacy.TestPKComZeroOne()
-	privacy.TestProductCommitment()
+	//privacy.TestProductCommitment()
 	//privacy.Pcm.InitCommitment()
 	// privacy.TestProofIsZero()
 	// fmt.Println("Done")
 	// privacy.TestPKComZeroOne()
 	//privacy.TestPKOneOfMany()
 
-	// fmt.Println(privacy.ConvertAsciiToInt(49))
+	//type Proof interface{
+	//	InitProof()
+	//}
+	//
+	//type Protocol interface{
+	//	Prove() Proof
+	//}
+	//
+	//type Proof1 struct{
+	//	a int
+	//}
+	//
+	//func (p*Proof1) InitProof() {
+	//
+	//}
+
+	//var p1, p2 privacy.Poly
+	//p1 = privacy.RandomPoly(1, 3)
+	//fmt.Println(p1.String())
+	//p2 = privacy.RandomPoly(1, 3)
+	//fmt.Println(p2.String())
+	//p3 := p1.Mul(p2, nil)
+	//fmt.Println(p3.String())
+
+	privacy.TestSchn()
 
 }
